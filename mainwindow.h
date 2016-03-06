@@ -81,8 +81,6 @@ private:
     void SetScreen(QString qrc);
     QString imageOnScreen;
 
-    bool opened;
-
     MyObject *myObject;
     MyThread *myThreadA;
 
@@ -98,6 +96,7 @@ private:
     QImage  frameImage;
     QTimer *timer;
     cv::VideoCapture videoCapture;
+    bool openSuccess;
 
 };
 

@@ -22,24 +22,17 @@ MainWindow::MainWindow(QWidget *parent) :
      char left[] = {0xff,0x00,0x03,0x00,0xff};
      char right[] = {0xff,0x00,0x04,0x00,0xff};
      char stop[] = {0xff,0x00,0x00,0x00,0xff};
-
-
      CMDmap["forward"] = QString::fromLatin1(forward);
      CMDmap["back"] = QString::fromLatin1(back);
      CMDmap["left"] = QString::fromLatin1(left);
      CMDmap["right"] = QString::fromLatin1(right);
      CMDmap["stop"] = QString::fromLatin1(stop);
 
-//     qDebug() <<"forward is: " <<CMDmap["forward"].toLatin1().toHex();
-//
-
      videoFrameLabel = new QLabel;
      videoFrameLabel->setMinimumSize(1, 1);
      videoFrameLabel->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
- //    videoFrameLabel->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
- //   videoFrameLabel->setScaledContents(true);
-
      setCentralWidget(videoFrameLabel);
+     openSuccess = false;
 
      myObject = new MyObject();
      myThreadA = new MyThread();
@@ -47,9 +40,10 @@ MainWindow::MainWindow(QWidget *parent) :
      timer = new QTimer(this);
 
     // Connect slots
+    connect(timer, SIGNAL(timeout()), this, SLOT(timerLoop()));
+
     connect(ui->actionOpen,SIGNAL(triggered()),this,SLOT(actionOpen()));
     connect(ui->actionClose,SIGNAL(triggered()),this,SLOT(actionClose()));
-    connect(timer, SIGNAL(timeout()), this, SLOT(timerLoop()));
     connect(ui->actionConfigure, SIGNAL(triggered()), settings, SLOT(show()));
 
     connect(myObject->tcpClient->tcpSocket,SIGNAL(connected()),this,SLOT(setConnectionSuccess()));
@@ -59,43 +53,7 @@ MainWindow::MainWindow(QWidget *parent) :
     myObject->moveToThread(myThreadA);
     myThreadA->start();
 
-//    msgLabel = new QLabel;
-//    msgLabel->setMinimumSize(msgLabel->sizeHint());
-//    msgLabel->setAlignment(Qt::AlignHCenter);
-
-//    statusBar()->addWidget(msgLabel);
-//    ui->statusBar()->setStyleSheet(QString("QStatusBar::item{border: 0px}"));
-
-
 //	// Set initial screen
-
-//     cv::Mat src;
-//     QString tmpPath;
-//     QString path;
-//     QString imagePath;
-//    // QDir dir;
-//  //   tmpPath=dir.currentPath();
-
-//     QDir dir("initialScreen.jpg");
-//     tmpPath = dir.absolutePath();
-
-//     if(QString(QDir::separator())!="/")
-//     {
-//         QStringList tmplist=tmpPath.split("/");
-
-//         for(int i=0;i<tmplist.size()-1;i++)
-//         {
-//             path =path + tmplist.at(i)+QDir::separator();
-//         }
-
-
-//        imagePath = path+tmplist.last();
-//     }
-//     else
-//        imagePath = path;
-//    qDebug()<<imagePath.toStdString().c_str();
-//      src = cv::imread(imagePath.toStdString().c_str());
-
      SetScreen(":/images/initialScreen.jpg");
 }
 
@@ -106,55 +64,40 @@ void MainWindow::actionOpen() {
     if (!timer->isActive()) {
         // Open file dialog
    //     QString fileName = QFileDialog::getOpenFileName(this, "Open Video", ".", "Video Files (*.avi *.mpg)");
+   //       videoCapture.open(fileName.toStdString().c_str());//fileName.toAscii().data());
 
-//-->        //input ip address here:-----------------
-
- //       videoCapture.open(fileName.toStdString().c_str());//fileName.toAscii().data());
       SettingsDialog::Settings p = settings->settings();
 
       QString address = p.IPaddress;
       QString controlIP = p.controlIP;
       QStringList IPtemp = controlIP.split(':',QString::SkipEmptyParts);
-      if(IPtemp.size() == 2)
+      if(IPtemp.size() == 2) //make sure the format is IP:port
       {
           QString IP = IPtemp.at(0);
           QString port = IPtemp.at(1);
           myObject->tcpClient->newConnection(IP.toStdString().c_str(),port.toInt());
       }
 
-       opened = false;
-      if(isDigitStr(address))
-      opened = videoCapture.open(address.toInt());
-      else
-      opened = videoCapture.open(address.toStdString().c_str());
 
-      if(opened)
+      if(isDigitStr(address))
+       videoCapture.open(address.toInt()); //open webcam on laptop when type in 0
+      else
+      videoCapture.open(address.toStdString().c_str());
+
+      if(videoCapture.isOpened())
       {
           ui->statusBar->showMessage("opening camera success",3000);
-
-
-          // Open directory dialog
-  //        QString directoryName = QFileDialog::getExistingDirectory(this, "Select Output Folder");
-
-          // Set labels
-  //        string fileText("VIDEO FILE: ");
-  //        fileText+=fileName.toStdString();
-  //        string directoryText("OUTPUT FOLDER: ");
-  //        directoryText+=directoryName.toStdString();
-
-          // Set output folder
-     //     folder = directoryName.toStdString();
 
           // Get frame per second
           int fps=videoCapture.get(CV_CAP_PROP_FPS);
 
-  //        qDebug("fps: %d", fps);
-          // Set timer interval
+          //   qDebug("fps: %d", fps);
 
+          // Set timer interval
           if(fps>0)
           timer->setInterval(1000/fps);
           else
-           timer->setInterval(1000/33);
+           timer->setInterval(1000/33);  //set 33 as default fps
 
           timer->start();
 
@@ -164,6 +107,7 @@ void MainWindow::actionOpen() {
       else
       {
           ui->statusBar->showMessage("open camera fail",3000);
+          openSuccess = false;
           SetScreen(":/images/failScreen.jpg");
       }
 
@@ -171,6 +115,7 @@ void MainWindow::actionOpen() {
     } else {
         timer->stop();
         ui->statusBar->showMessage("open camera fail",3000);
+        openSuccess = false;
         SetScreen(":/images/failScreen.jpg");
     }
 }
@@ -181,18 +126,18 @@ void MainWindow::actionClose()
     ui->actionOpen->setEnabled(true);
     ui->actionClose->setEnabled(false);
 
-    if(opened)
+    if(videoCapture.isOpened())
         videoCapture.release();
 
     if(timer->isActive())
         timer->stop();
 
     SetScreen(":/images/closeScreen.jpg");
+    openSuccess = false;
 }
 
 // Main loop activated with the timer.
 void MainWindow::timerLoop() {
-
 
     // Capture frame from video
     videoCapture>>rawFrame;
@@ -200,7 +145,10 @@ void MainWindow::timerLoop() {
     // Check if frame was successfully captured.
     if (rawFrame.empty()) {
         timer->stop();
-//        cout<<"video reached fail\n";
+        ui->statusBar->showMessage("open camera fail",3000);
+        SetScreen(":/images/failScreen.jpg");
+        openSuccess = false;
+
     } else {
         cv::resize(rawFrame, rawFrame, cv::Size(rawFrame.size().width,rawFrame.size().height), 0, 0, CV_INTER_LINEAR);
         frameImage = ImageFormat::Mat2QImage(rawFrame);
@@ -209,6 +157,7 @@ void MainWindow::timerLoop() {
         int w = videoFrameLabel->width();
         int h = videoFrameLabel->height();
         videoFrameLabel->setPixmap(QPixmap::fromImage(frameImage).scaled(w,h,Qt::KeepAspectRatio));
+        openSuccess = true;
 
     }
 
@@ -216,6 +165,7 @@ void MainWindow::timerLoop() {
 
 void MainWindow::resizeEvent(QResizeEvent *event)
 {
+    if(!openSuccess)
    SetScreen(imageOnScreen);
 }
 
@@ -254,17 +204,17 @@ void MainWindow::keyPressEvent(QKeyEvent * event)
 
 bool MainWindow::isDigitStr(QString src)
 {
-    QByteArray ba = src.toLatin1();//QString 转换为 char*
+    QByteArray ba = src.toLatin1();// convert QString to char*
      const char *s = ba.data();
 
     while(*s && *s>='0' && *s<='9') s++;
 
     if (*s)
-    { //不是纯数字
+    { //not a number
         return false;
     }
     else
-    { //纯数字
+    { //number
         return true;
     }
 }
@@ -297,7 +247,6 @@ cv::Mat MainWindow::loadFromQrc(QString qrc)
         file.read((char*)buf.data(), sz);
         m = cv::imdecode(buf, cv::IMREAD_COLOR); //
     }
-
     //double toc = (double(getTickCount()) - tic) * 1000.0 / getTickFrequency();
     //qDebug() << "OpenCV loading time: " << toc;
 

@@ -15,6 +15,7 @@ QString TcpClient::readCMD()
 
 void TcpClient::sendCMD(QString cmd)
 {
+    qDebug()<<cmd.toLatin1().toHex();
     tcpSocket->write(cmd.toLatin1());
 }
 

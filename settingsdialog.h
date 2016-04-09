@@ -22,12 +22,16 @@ public:
     struct Settings {
        QString IPaddress;
        QString controlIP;
+       QString picturePath;
     };
 
     explicit SettingsDialog(QWidget *parent = 0);
     ~SettingsDialog();
 
     Settings settings() const;
+
+    void updateSettings();
+    void updatePath(QString path);
 
 private slots:
 
@@ -37,8 +41,10 @@ private slots:
 
     void on_defultButton_clicked();
 
+    void on_setPath_clicked();
+
 private:
-    void updateSettings();
+
 
 private:
     Ui::SettingsDialog *ui;

@@ -6,15 +6,18 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>369</width>
-    <height>410</height>
+    <width>737</width>
+    <height>353</height>
    </rect>
   </property>
   <property name="sizePolicy">
-   <sizepolicy hsizetype="Ignored" vsizetype="Ignored">
+   <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
     <horstretch>0</horstretch>
     <verstretch>0</verstretch>
    </sizepolicy>
+  </property>
+  <property name="focusPolicy">
+   <enum>Qt::NoFocus</enum>
   </property>
   <property name="windowTitle">
    <string>VideoRobot</string>
@@ -22,7 +25,64 @@
   <property name="toolButtonStyle">
    <enum>Qt::ToolButtonTextOnly</enum>
   </property>
-  <widget class="QWidget" name="centralWidget"/>
+  <widget class="QWidget" name="centralWidget">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
+   <widget class="QLabel" name="labelLeft">
+    <property name="geometry">
+     <rect>
+      <x>1</x>
+      <y>1</y>
+      <width>249</width>
+      <height>471</height>
+     </rect>
+    </property>
+    <property name="sizePolicy">
+     <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+      <horstretch>0</horstretch>
+      <verstretch>0</verstretch>
+     </sizepolicy>
+    </property>
+    <property name="minimumSize">
+     <size>
+      <width>1</width>
+      <height>1</height>
+     </size>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+   </widget>
+   <widget class="QLabel" name="labelRight">
+    <property name="geometry">
+     <rect>
+      <x>255</x>
+      <y>1</y>
+      <width>247</width>
+      <height>471</height>
+     </rect>
+    </property>
+    <property name="sizePolicy">
+     <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+      <horstretch>0</horstretch>
+      <verstretch>0</verstretch>
+     </sizepolicy>
+    </property>
+    <property name="minimumSize">
+     <size>
+      <width>1</width>
+      <height>1</height>
+     </size>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+   </widget>
+  </widget>
   <widget class="QToolBar" name="mainToolBar">
    <property name="font">
     <font>
@@ -47,7 +107,13 @@
    </attribute>
    <addaction name="actionOpen"/>
    <addaction name="actionClose"/>
+   <addaction name="separator"/>
    <addaction name="actionConfigure"/>
+   <addaction name="separator"/>
+   <addaction name="actionCapture"/>
+   <addaction name="separator"/>
+   <addaction name="actionTestParamSet"/>
+   <addaction name="separator"/>
   </widget>
   <widget class="QStatusBar" name="statusBar">
    <property name="font">
@@ -82,6 +148,16 @@
    </property>
    <property name="text">
     <string>close</string>
+   </property>
+  </action>
+  <action name="actionCapture">
+   <property name="text">
+    <string>capture</string>
+   </property>
+  </action>
+  <action name="actionTestParamSet">
+   <property name="text">
+    <string>testParamSet</string>
    </property>
   </action>
  </widget>

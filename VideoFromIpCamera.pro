@@ -6,7 +6,7 @@
 
 QT       += core gui
 
-QT += network
+QT += network concurrent
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -20,17 +20,22 @@ SOURCES += main.cpp\
     settingsdialog.cpp \
     TcpClient.cpp \
     MyObject.cpp \
-    MyThread.cpp
+    MyThread.cpp \
+    testparamset.cpp \
+    linefinder.cpp
 
 HEADERS  += mainwindow.h \
     imageformat.h \
     settingsdialog.h \
     TcpClient.h \
     MyObject.h \
-    MyThread.h
+    MyThread.h \
+    testparamset.h \
+    linefinder.h
 
 FORMS    += mainwindow.ui \
-    settingsdialog.ui
+    settingsdialog.ui \
+    testparamset.ui
 
 INCLUDEPATH += E:\opencv\opencv3.0\opencv_file\include\
                E:\opencv\opencv3.0\opencv_file\include\opencv\

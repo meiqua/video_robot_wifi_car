@@ -1,5 +1,4 @@
 #include"MyObject.h"
-
 #include<QDebug>
 
 

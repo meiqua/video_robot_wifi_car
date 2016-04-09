@@ -31,9 +31,10 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
-
+#include <testparamset.h>
 #include <ImageFormat.h>
 
+#include "linefinder.h"
 QT_BEGIN_NAMESPACE
 
 namespace Ui {
@@ -53,6 +54,8 @@ public:
     ~MainWindow();
 
     void keyPressEvent(QKeyEvent *);
+    void keyReleaseEvent(QKeyEvent *);
+
 private slots:
 
     /** Load video to process.
@@ -65,18 +68,24 @@ private slots:
     */
     void timerLoop();
 
+    void timeToDistribute();
+
     void setConnectionSuccess();
     void setConnectionFail();
     void readCMD();
+    void savePictures();
 
 protected:
     void resizeEvent(QResizeEvent *event);
+
 
 
 private:
     bool isDigitStr(QString src);
 
     cv::Mat loadFromQrc(QString qrc);
+
+    void intializeCMD();
 
     void SetScreen(QString qrc);
     QString imageOnScreen;
@@ -90,13 +99,18 @@ private:
     Ui::MainWindow *ui;
     SettingsDialog *settings;
 
-    QLabel *videoFrameLabel;
+  //  TestParamSet* testParam;
 
-    cv::Mat rawFrame,rawCopyFrame;
+    QLabel *videoFrameLabel;
+    QLabel *frameEdgeLabel;
+
+    cv::Mat rawFrame,rawCopyFrame,frameForEdgeDetect,edge;
     QImage  frameImage;
     QTimer *timer;
     cv::VideoCapture videoCapture;
     bool openSuccess;
+    lineFinder* myLineFinder;
+
 
 };
 

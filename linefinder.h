@@ -27,9 +27,9 @@ public:
 
     std::vector<cv::Vec4i> predictLines(std::vector< std::vector<cv::Vec4i> >& clusteredLines,int cols);
 
-    std::vector< std::vector<cv::Vec4i> > lineCluster(std::vector<cv::Vec4i>& lines,int rows,int cols);
+    std::vector< std::vector<cv::Vec4i> > lineCluster(std::vector<cv::Vec4i> lines,int rows);
 
-    bool findCombinedLine(cv::Vec4i& line1,cv::Vec4i& line2,int cols);
+    bool findCombinedLine(cv::Vec4i& line1,cv::Vec4i& line2);
 
     cv::Mat drawLinesOn(cv::Mat& backg,std::vector<cv::Vec4i>& lines);
 

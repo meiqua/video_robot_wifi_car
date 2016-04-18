@@ -4,9 +4,70 @@
 #include <cmath>
 #include <limits>
 
-lineFinder::lineFinder()
+cv::Mat lineFinder::testAction(cv::Mat& src)
 {
-    testParam = new TestParamSet;
+    std::vector< std::vector<cv::Vec4i> > clusteredLines = findLines(src);
+
+        cv::Mat backg = getEdge(src);
+
+    if(clusteredLines.size()>1)
+    {
+        std::vector<cv::Vec4i>& lineUp = clusteredLines.at(0);
+        std::vector<cv::Vec4i>& lineDown = clusteredLines.at(1);
+        std::vector<cv::Vec4i> lines;
+        lines.insert(lines.end(),lineUp.begin(),lineUp.end());
+        lines.insert(lines.end(),lineDown.begin(),lineDown.end());
+
+//        qDebug()<<"size of clustered lineUp: "<<lineUp.size();
+//        qDebug()<<"size of clustered lineDown: "<<lineDown.size();
+
+        backg = drawLinesOn(backg,lines);
+
+        std::vector<cv::Vec4i> preLines = predictLines(clusteredLines,src.cols);
+        for( size_t i = 0; i < preLines.size(); i++ )
+        {
+          //qDebug()<<"break here"<<endl;
+          cv::Vec4i l = preLines[i];
+          cv::line( backg, cv::Point(l[0], l[1]), cv::Point(l[2], l[3]), cv::Scalar(0,255,0), 2, CV_AA);
+        }
+
+    }
+
+    return backg;
+}
+
+cv::Mat lineFinder::getEdge(cv::Mat const& src1)
+{
+     cv::Mat src,edge,cannyEdge,binaryEdge,noUse;
+     double lightThresh,graThresh;
+    cv::cvtColor(src1,src,CV_BGR2GRAY);
+
+    src.convertTo(src,CV_8UC1);
+    cv::blur(src,src,cv::Size(3,3),cv::Point(-1,-1));
+
+    graThresh = cv::threshold(findGraMagni(src), noUse, 0, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
+
+    noUse.release();
+
+       cv::Canny(src,cannyEdge,graThresh/2,graThresh,3);
+       lightThresh =  findThreshAtEdge(src,cannyEdge);
+       binaryEdge = findEdgeByBinary(src,lightThresh);
+       edge = edgeCombine(cannyEdge,binaryEdge);
+       edge = rmEdge(src,edge);
+
+for(int i=0;i<1;i++)
+{
+    graThresh = findThreshAtEdge(findGraMagni(src),edge);
+    cv::Canny(src,cannyEdge,graThresh/2,graThresh,3);
+    lightThresh =  findThreshAtEdge(src,cannyEdge);
+    binaryEdge = findEdgeByBinary(src,lightThresh);
+    edge = edgeCombine(cannyEdge,binaryEdge);
+    edge = rmEdge(src,edge);
+
+}
+
+    cv::cvtColor(edge,edge,CV_GRAY2BGR);
+    return edge;
 }
 
 cv::Mat lineFinder::findGraMagni(cv::Mat& src)
@@ -152,44 +213,6 @@ cv::Mat lineFinder::edgeCombine(cv::Mat& cannyEdge,cv::Mat& binaryEdge)
     return cannyEdge;
 }
 
-cv::Mat lineFinder::getEdge(cv::Mat const& src1)
-{
-     cv::Mat src,edge,cannyEdge,binaryEdge,noUse;
-     double lightThresh,graThresh;
-    cv::cvtColor(src1,src,CV_BGR2GRAY);
-
-    src.convertTo(src,CV_8UC1);
-    cv::blur(src,src,cv::Size(3,3),cv::Point(-1,-1));
-
-    graThresh = cv::threshold(findGraMagni(src), noUse, 0, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
-
-//cv::Scalar tempVal = mean( findGraMagni(src) );
-//float myMAtMean = tempVal.val[0];
-//graThresh = myMAtMean;
-
-    noUse.release();
-
-       cv::Canny(src,cannyEdge,graThresh/2,graThresh,3);
-       lightThresh =  findThreshAtEdge(src,cannyEdge);
-       binaryEdge = findEdgeByBinary(src,lightThresh);
-       edge = edgeCombine(cannyEdge,binaryEdge);
-       edge = rmEdge(src,edge);
-
-for(int i=0;i<1;i++)
-{
-    graThresh = findThreshAtEdge(findGraMagni(src),edge);
-    cv::Canny(src,cannyEdge,graThresh/2,graThresh,3);
-    lightThresh =  findThreshAtEdge(src,cannyEdge);
-    binaryEdge = findEdgeByBinary(src,lightThresh);
-    edge = edgeCombine(cannyEdge,binaryEdge);
-    edge = rmEdge(src,edge);
-
-}
-
-    cv::cvtColor(edge,edge,CV_GRAY2BGR);
-    return edge;
-}
-
 std::vector< std::vector<cv::Vec4i> > lineFinder::findLines(cv::Mat& src)
 {
       cv::Mat edge = getEdge(src);
@@ -199,13 +222,10 @@ std::vector< std::vector<cv::Vec4i> > lineFinder::findLines(cv::Mat& src)
 
       int countNonZero = cv::countNonZero(edge);
 
-//      qDebug()<<"no zero is"<<countNonZero;
-
-  //    for (int i=0;i<1000;i++)
-      cv::HoughLinesP(edge, lines, 3, CV_PI/180*3, countNonZero/15, 1, src.cols );
+      cv::HoughLinesP(edge, lines, 3, CV_PI/180*3, countNonZero/10, countNonZero/10, src.cols );
 
       std::vector< std::vector<cv::Vec4i> > myLineCluster =
-              lineCluster(lines,edge.rows,edge.cols);
+              lineCluster(lines,edge.rows);
 
   //    qDebug()<<"size of lines: "<<lines.size();
 
@@ -255,16 +275,21 @@ std::vector<cv::Vec4i> lineFinder::predictLines(std::vector<std::vector<cv::Vec4
     return preLines;
 }
 
-std::vector< std::vector<cv::Vec4i> > lineFinder::lineCluster(std::vector<cv::Vec4i>& lines,int rows,int cols)
+std::vector< std::vector<cv::Vec4i> > lineFinder::lineCluster(std::vector<cv::Vec4i> lines,int rows)
 {
     std::vector<cv::Vec4i> clusteredLinesUp,clusteredLinesDown;
     for( size_t i = 0; i < lines.size(); i++ )
     {
       cv::Vec4i& l = lines[i];
-      if(l[1]<rows/2&&l[3]<rows/2)   {
-          clusteredLinesUp.push_back(l);
+      double a1 = (l[1]-l[3])/(double)(l[0]-l[2]);
+      if(l[1]<rows/2&&l[3]<rows/2)   {       
+        if(std::abs(a1)<0.6){  //gradient bigger than 31 degree
+        clusteredLinesUp.push_back(l);
+        }
       }else if (l[1]>rows/2&&l[3]>rows/2)    {
-          clusteredLinesDown.push_back(l);
+        if(std::abs(a1)<0.6){  //gradient bigger than 31 degree
+        clusteredLinesDown.push_back(l);
+        }
       }
     }
     std::vector< std::vector<cv::Vec4i> > lineCluster;
@@ -278,18 +303,17 @@ std::vector< std::vector<cv::Vec4i> > lineFinder::lineCluster(std::vector<cv::Ve
       bool breakFlag = 0;
       size_t size = clusteredLines.size();
 
-
-
       while(1){
 
           if(size == 0)
               break;
 
           for( size_t i = 0; i < clusteredLines.size()-1; i++ )  {
-              cv::Vec4i line1 = clusteredLines[i];
+              cv::Vec4i &line1 = clusteredLines[i];
+
               for( size_t j = i+1; j < clusteredLines.size(); j++ ) {
-                  cv::Vec4i line2 = clusteredLines[j];
-                  if(findCombinedLine(line1,line2,cols))  {
+                  cv::Vec4i& line2 = clusteredLines[j];
+                  if(findCombinedLine(line1,line2))  {
                       clusteredLines.erase(clusteredLines.begin()+j);
                       breakFlag = 1;
                       break;
@@ -307,6 +331,9 @@ std::vector< std::vector<cv::Vec4i> > lineFinder::lineCluster(std::vector<cv::Ve
               break;
           }
       }
+
+
+
     }
 
 //    qDebug()<<"size of lineCluster[0]: "<<lineCluster[0].size();
@@ -315,7 +342,7 @@ std::vector< std::vector<cv::Vec4i> > lineFinder::lineCluster(std::vector<cv::Ve
 
 }
 
-bool lineFinder::findCombinedLine(cv::Vec4i& line1, cv::Vec4i& line2,int cols)
+bool lineFinder::findCombinedLine(cv::Vec4i& line1, cv::Vec4i& line2)
 {
     double a1 = (line1[1]-line1[3])/(double)(line1[0]-line1[2]);
     double b1 = line1[1]-a1*line1[0];
@@ -333,14 +360,8 @@ bool lineFinder::findCombinedLine(cv::Vec4i& line1, cv::Vec4i& line2,int cols)
     {
         return false;
     }
-    double x = (b2 - b1) / (a1 - a2);
-   // double y = a1 * x + b1;
 
-    if(x<0||x>cols)
-    {
-        return false;
-    }
-    return true;
+    return false;
 }
 
 cv::Mat lineFinder::drawLinesOn(cv::Mat& backg, std::vector<cv::Vec4i>& lines)
@@ -351,40 +372,13 @@ cv::Mat lineFinder::drawLinesOn(cv::Mat& backg, std::vector<cv::Vec4i>& lines)
         for( size_t i = 0; i < lines.size(); i++ )
         {
           cv::Vec4i l = lines[i];
-          cv::line( backg, cv::Point(l[0], l[1]), cv::Point(l[2], l[3]), cv::Scalar(0,0,255), 3, CV_AA);
+          cv::line( backg, cv::Point(l[0], l[1]), cv::Point(l[2], l[3]), cv::Scalar(0,0,255), 2, CV_AA);
         }
     }
     return backg;
 }
 
-cv::Mat lineFinder::testAction(cv::Mat& src)
+lineFinder::lineFinder()
 {
-    std::vector< std::vector<cv::Vec4i> > clusteredLines = findLines(src);
-
-        cv::Mat backg = getEdge(src);
-
-    if(clusteredLines.size()>1)
-    {
-        std::vector<cv::Vec4i>& lineUp = clusteredLines.at(0);
-        std::vector<cv::Vec4i>& lineDown = clusteredLines.at(1);
-        std::vector<cv::Vec4i> lines;
-        lines.insert(lines.end(),lineUp.begin(),lineUp.end());
-        lines.insert(lines.end(),lineDown.begin(),lineDown.end());
-
-//        qDebug()<<"size of clustered lineUp: "<<lineUp.size();
-//        qDebug()<<"size of clustered lineDown: "<<lineDown.size();
-
-        backg = drawLinesOn(backg,lines);
-
-        std::vector<cv::Vec4i> preLines = predictLines(clusteredLines,src.cols);
-        for( size_t i = 0; i < preLines.size(); i++ )
-        {
-   //         qDebug()<<"break here"<<endl;
-          cv::Vec4i l = preLines[i];
-          cv::line( backg, cv::Point(l[0], l[1]), cv::Point(l[2], l[3]), cv::Scalar(0,255,0), 3, CV_AA);
-        }
-
-    }
-
-    return backg;
+    testParam = new TestParamSet;
 }

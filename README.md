@@ -21,8 +21,8 @@
 * set some param for test
   
 ### class findLines:  
-* find direction by edge detection
-    * mainly depend on two features: large gradient and large brightness
+* find direction by edge of the vehicle at two sides.
+    * mainly depend on two features: large gradient and high brightness around the wanted edges
     * steps:
         * find gradient threshold using otsu method
         * find edge by canny using the gradient threshold

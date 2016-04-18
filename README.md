@@ -26,4 +26,4 @@
     * steps:
         * find gradient threshold using otsu method
         * find edge by canny using the gradient threshold
-        * find brightness threshold around *edge* 
+        * find brightness threshold around **edge** 

@@ -1,8 +1,22 @@
 # video_robot_wifi_car
-This is a  program to get video from IP camera or webcam,using opencv3 and qt5
+function:
+  get video from IP camera or webcam
+  control wifi car to move
+  find direction when move under vehicles by edge detection
+  stitch images to generate a big picture of vehicle bottom(have not achieved yet)
 
-class mythread myobject TCPclient : run a TCPsocket in a thread to communicate with remote control IP(format IP:port)
+based on: 
+  opencv3 and qt5
 
-class immageformat : convert image format of opencv to Qimage
+class mythread myobject TCPclient :
+  run a TCPsocket in a thread to communicate with remote control IP(format IP:port)
 
-class settingdialog : set IP address of IP camera or webcam and control address
+class imageformat : 
+  convert image format of opencv to Qimage
+
+class settingdialog :
+  set IP address of IP camera or webcam and control address
+
+class findLines:
+  find direction by edge detection
+

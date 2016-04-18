@@ -33,7 +33,7 @@
             * gradient angle greater than 30 degree(because we believe direction will not change more than 30)
             * gradient direction greater than 0 in the Top half, smaller than 0 in the bottom half(because we know background is white and vehicle bottom is black)
         * repeat above steps for one time, just change first step a little bit: find gradient threshold using otsu method around **edge**(this step will enhance the detected edge because we use more accurate edges)
-        * find lines, using hough metnod
+        * find lines, using hough method
         * find two clusters of lines, one is the top half, the other is the bottom half.
         * predict lines by one line in top half and one line in bottom half.
               

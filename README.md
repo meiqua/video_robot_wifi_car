@@ -6,16 +6,16 @@
 * stitch images to generate a big picture of vehicle bottom(have not achieved yet)  
 
 ### based on:   
-  opencv3 and qt5  
+* opencv3 and qt5  
     
 ### class mythread, myobject, TCPclient:  
-  run a TCPsocket in a thread to communicate with remote control IP(format IP:port)  
+* run a TCPsocket in a thread to communicate with remote control IP(format IP:port)  
   
 ### class imageformat:   
-  convert image format of opencv to Qimage  
+* convert image format of opencv to Qimage  
   
 ### class settingdialog:  
-  set IP address of IP camera or webcam and control address  
+* set IP address of IP camera or webcam and control address  
   
 ### class findLines:  
-  find direction by edge detection
+* find direction by edge detection

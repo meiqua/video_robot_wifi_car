@@ -1,10 +1,11 @@
 ## video_robot_wifi_car
-### function:  
-> get video from IP camera or webcam  
+### function:
+```
+  get video from IP camera or webcam  
   control wifi car to move  
   find direction when move under vehicles by edge detection  
   stitch images to generate a big picture of vehicle bottom(have not achieved yet)  
-  
+```
 ### based on:   
   opencv3 and qt5  
     

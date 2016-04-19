@@ -25,6 +25,10 @@ private slots:
 
     void on_do2_clicked();
 
+    void on_verticalSlider_actionTriggered(int action);
+
+    void valueChanged(int);
+
 signals:
     void refresh();
 

@@ -6,7 +6,12 @@ testparamset::testparamset(QWidget *parent) :
     ui(new Ui::testparamset)
 {
     ui->setupUi(this);
+
+
+    connect(ui->verticalSlider,SIGNAL(valueChanged(int)),this,SLOT(valueChanged(int)));
     steps = 0;
+    do1 = 0;
+    do2 = 0;
 }
 
 testparamset::~testparamset()
@@ -36,4 +41,16 @@ void testparamset::on_do2_clicked()
 {
     do2 = ui->do2->isChecked();
         emit refresh();
+}
+
+void testparamset::on_verticalSlider_actionTriggered(int action)
+{
+    //  on_verticalSlider_sliderMoved(action);
+}
+
+void testparamset::valueChanged(int position)
+{
+    steps = position;
+    stepReverse();
+    emit refresh();
 }

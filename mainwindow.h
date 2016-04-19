@@ -75,6 +75,7 @@ private slots:
     void readCMD();
     void savePictures();
 
+    void receiveRefresh();
 protected:
     void resizeEvent(QResizeEvent *event);
 

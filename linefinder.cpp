@@ -6,29 +6,28 @@
 
 cv::Mat lineFinder::testAction(cv::Mat& src)
 {
-    std::vector< std::vector<cv::Vec4i> > clusteredLines = findLines(src);
+    cv::Mat backg = getEdge(src);
 
-        cv::Mat backg = getEdge(src);
-
-    if(clusteredLines.size()>1)
+    if(testParam->steps >= 7)
     {
+        std::vector< std::vector<cv::Vec4i> > clusteredLines = findLines(backg);
         std::vector<cv::Vec4i>& lineUp = clusteredLines.at(0);
         std::vector<cv::Vec4i>& lineDown = clusteredLines.at(1);
         std::vector<cv::Vec4i> lines;
         lines.insert(lines.end(),lineUp.begin(),lineUp.end());
         lines.insert(lines.end(),lineDown.begin(),lineDown.end());
 
-//        qDebug()<<"size of clustered lineUp: "<<lineUp.size();
-//        qDebug()<<"size of clustered lineDown: "<<lineDown.size();
+ //        qDebug()<<"size of lines: "<<lines.size() ;
 
-        backg = drawLinesOn(backg,lines);
+        backg = drawLines(backg,lines,cv::Scalar(0,0,255));
 
-        std::vector<cv::Vec4i> preLines = predictLines(clusteredLines,src.cols);
-        for( size_t i = 0; i < preLines.size(); i++ )
+
+        if(testParam->steps >= 9)
         {
-          //qDebug()<<"break here"<<endl;
-          cv::Vec4i l = preLines[i];
-          cv::line( backg, cv::Point(l[0], l[1]), cv::Point(l[2], l[3]), cv::Scalar(0,255,0), 2, CV_AA);
+           std::vector<cv::Vec4i> preLines;
+           preLines = predictLines(clusteredLines,src.cols);
+           backg = drawLines(backg,preLines,cv::Scalar(0,255,0));
+           qDebug()<<"here" ;
         }
 
     }
@@ -38,26 +37,53 @@ cv::Mat lineFinder::testAction(cv::Mat& src)
 
 cv::Mat lineFinder::getEdge(cv::Mat const& src1)
 {
-     cv::Mat src,edge,cannyEdge,binaryEdge,noUse;
+     cv::Mat src,edge,cannyEdge,binaryEdge,noUse,testEdge,GraMagni;
      double lightThresh,graThresh;
     cv::cvtColor(src1,src,CV_BGR2GRAY);
 
     src.convertTo(src,CV_8UC1);
     cv::blur(src,src,cv::Size(3,3),cv::Point(-1,-1));
 
-    graThresh = cv::threshold(findGraMagni(src), noUse, 0, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
+    GraMagni = findGraMagni(src);
+    graThresh = cv::threshold(GraMagni, noUse, 0, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
+    if(testParam->steps == 0)
+        testEdge = GraMagni.clone();
 
     noUse.release();
 
        cv::Canny(src,cannyEdge,graThresh/2,graThresh,3);
+       if(testParam->steps == 1)
+           testEdge = cannyEdge.clone();
+
        lightThresh =  findThreshAtEdge(src,cannyEdge);
+
+       if(testParam->steps == 2)
+       {
+           cv::threshold(src, testEdge, lightThresh, 255, CV_THRESH_BINARY);
+
+           if(testParam->do1)
+           cv::dilate(testEdge,testEdge,cv::Mat(),cv::Point(-1, -1),1);
+
+           if(testParam->do2)
+           cv::erode(testEdge,testEdge,cv::Mat(),cv::Point(-1, -1),1);
+       }
+
+
        binaryEdge = findEdgeByBinary(src,lightThresh);
+       if(testParam->steps == 3)
+           testEdge = binaryEdge.clone();
+
        edge = edgeCombine(cannyEdge,binaryEdge);
+       if(testParam->steps == 4)
+           testEdge = edge.clone();
+
        edge = rmEdge(src,edge);
+       if(testParam->steps == 5)
+           testEdge = edge.clone();
 
 for(int i=0;i<1;i++)
 {
-    graThresh = findThreshAtEdge(findGraMagni(src),edge);
+    graThresh = findThreshAtEdge(GraMagni,edge);
     cv::Canny(src,cannyEdge,graThresh/2,graThresh,3);
     lightThresh =  findThreshAtEdge(src,cannyEdge);
     binaryEdge = findEdgeByBinary(src,lightThresh);
@@ -65,9 +91,40 @@ for(int i=0;i<1;i++)
     edge = rmEdge(src,edge);
 
 }
+if(testParam->steps >= 6)
+    testEdge = edge.clone();
+
+    edge = testEdge;
 
     cv::cvtColor(edge,edge,CV_GRAY2BGR);
     return edge;
+}
+
+std::vector< std::vector<cv::Vec4i> > lineFinder::findLines(cv::Mat& edge)
+{
+      cv::cvtColor(edge,edge,CV_BGR2GRAY);
+      std::vector<cv::Vec4i> lines,nouse;
+
+      int countNonZero = cv::countNonZero(edge);
+
+      cv::HoughLinesP(edge, lines, 3, CV_PI/180*3, countNonZero/15, countNonZero/15, edge.cols );
+//      qDebug()<<"size of lines2: "<<countNonZero ;
+
+      std::vector< std::vector<cv::Vec4i> > myLineCluster;
+
+      if(testParam->steps >= 8)
+      {
+          myLineCluster = lineCluster(lines,edge.rows);
+      }else
+      {
+          myLineCluster.push_back(lines);
+          myLineCluster.push_back(nouse);
+      }
+
+  //    qDebug()<<"size of lines: "<<lines.size();
+
+      cv::cvtColor(edge,edge,CV_GRAY2BGR);
+      return myLineCluster;
 }
 
 cv::Mat lineFinder::findGraMagni(cv::Mat& src)
@@ -179,6 +236,9 @@ cv::Mat lineFinder::findEdgeByBinary(cv::Mat& src,double Thresh)
     cv::threshold(src, binarySrc, Thresh, 255, CV_THRESH_BINARY);
     // cv::Laplacian(binarySrc,binaryEdge,CV_8U);
    // binarySrc.convertTo(binarySrc,CV_8UC1);
+//    cv::dilate(binarySrc,binarySrc,cv::Mat(),cv::Point(-1, -1),1);
+//    cv::erode(binarySrc,binarySrc,cv::Mat(),cv::Point(-1, -1),1);
+
     cv::Canny(binarySrc,binaryEdge,254,254,3);
 
     return binaryEdge;
@@ -186,23 +246,25 @@ cv::Mat lineFinder::findEdgeByBinary(cv::Mat& src,double Thresh)
 
 cv::Mat lineFinder::edgeCombine(cv::Mat& cannyEdge,cv::Mat& binaryEdge)
 {
-//    cv::Mat cannyEdge,binaryEdge;
-//    cannyEdge = findEdgeByCanny(src);
-//    binaryEdge = findEdgeByBinary(src);
-   cv::dilate(binaryEdge,binaryEdge,cv::Mat(2,2,CV_8U),cv::Point(-1, -1),1);
+   cv::dilate(binaryEdge,binaryEdge,cv::Mat(),cv::Point(-1, -1),1);
     int rows = cannyEdge.rows;
     int cols = cannyEdge.cols;
-    uchar* binaryEdgeElement;
-    uchar* cannyEdgeElement;
+
+    if(cannyEdge.isContinuous())
+    {
+        cols = cols*rows*cannyEdge.channels();
+        rows = 1;
+    }
+
     for(int i=0;i<rows;i++)
     {
-        cannyEdgeElement = cannyEdge.ptr<uchar>(i);
+        uchar* cannyEdgeElement = cannyEdge.ptr<uchar>(i);
 
         for(int j=0;j<cols;j++)
         {
             if(cannyEdgeElement[j]>0)
             {
-                binaryEdgeElement = binaryEdge.ptr<uchar>(i);
+              uchar*  binaryEdgeElement = binaryEdge.ptr<uchar>(i);
                 if(binaryEdgeElement[j]==0)
                 {
                     cannyEdgeElement[j]=0;
@@ -211,26 +273,6 @@ cv::Mat lineFinder::edgeCombine(cv::Mat& cannyEdge,cv::Mat& binaryEdge)
         }
     }
     return cannyEdge;
-}
-
-std::vector< std::vector<cv::Vec4i> > lineFinder::findLines(cv::Mat& src)
-{
-      cv::Mat edge = getEdge(src);
-
-      cv::cvtColor(edge,edge,CV_BGR2GRAY);
-      std::vector<cv::Vec4i> lines;
-
-      int countNonZero = cv::countNonZero(edge);
-
-      cv::HoughLinesP(edge, lines, 3, CV_PI/180*3, countNonZero/10, countNonZero/10, src.cols );
-
-      std::vector< std::vector<cv::Vec4i> > myLineCluster =
-              lineCluster(lines,edge.rows);
-
-  //    qDebug()<<"size of lines: "<<lines.size();
-
-      cv::cvtColor(edge,edge,CV_GRAY2BGR);
-      return myLineCluster;
 }
 
 std::vector<cv::Vec4i> lineFinder::predictLines(std::vector<std::vector<cv::Vec4i> >& clusteredLines,int cols)
@@ -364,21 +406,19 @@ bool lineFinder::findCombinedLine(cv::Vec4i& line1, cv::Vec4i& line2)
     return false;
 }
 
-cv::Mat lineFinder::drawLinesOn(cv::Mat& backg, std::vector<cv::Vec4i>& lines)
+cv::Mat lineFinder::drawLines(cv::Mat& backg, std::vector<cv::Vec4i>& lines,cv::Scalar color)
 {
    // cv::Mat temp;
-    if(testParam->isFindLines)
-    {
         for( size_t i = 0; i < lines.size(); i++ )
         {
           cv::Vec4i l = lines[i];
-          cv::line( backg, cv::Point(l[0], l[1]), cv::Point(l[2], l[3]), cv::Scalar(0,0,255), 2, CV_AA);
+          cv::line( backg, cv::Point(l[0], l[1]), cv::Point(l[2], l[3]), color, 2, CV_AA);
         }
-    }
     return backg;
 }
 
 lineFinder::lineFinder()
 {
-    testParam = new TestParamSet;
+    testParam = new testparamset;
 }
+

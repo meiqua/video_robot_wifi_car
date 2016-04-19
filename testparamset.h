@@ -4,34 +4,33 @@
 #include <QDialog>
 
 namespace Ui {
-class TestParamSet;
+class testparamset;
 }
 
-class TestParamSet : public QDialog
+class testparamset : public QDialog
 {
     Q_OBJECT
 
 public:
-    explicit TestParamSet(QWidget *parent = 0);
-    ~TestParamSet();
-
-     int cannyParam1;
-     int cannyParam2;
-     bool isAuto;
-     bool isFindLines;
+    explicit testparamset(QWidget *parent = 0);
+    ~testparamset();
+    int steps;
+    bool do1;
+    bool do2;
 
 private slots:
-    void on_pushButton_clicked();
+    void on_verticalSlider_sliderMoved(int position);
 
-    void on_autoSetThre_stateChanged(int arg1);
+    void on_do1_clicked();
 
-    void on_checkBox_stateChanged(int arg1);
+    void on_do2_clicked();
 
-    void on_findLinesChecked_stateChanged(int arg1);
+signals:
+    void refresh();
 
 private:
-    Ui::TestParamSet *ui;
-
+    Ui::testparamset *ui;
+    void stepReverse();
 
 };
 

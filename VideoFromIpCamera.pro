@@ -21,8 +21,8 @@ SOURCES += main.cpp\
     TcpClient.cpp \
     MyObject.cpp \
     MyThread.cpp \
-    testparamset.cpp \
-    linefinder.cpp
+    linefinder.cpp \
+    testparamset.cpp
 
 HEADERS  += mainwindow.h \
     imageformat.h \
@@ -30,8 +30,8 @@ HEADERS  += mainwindow.h \
     TcpClient.h \
     MyObject.h \
     MyThread.h \
-    testparamset.h \
-    linefinder.h
+    linefinder.h \
+    testparamset.h
 
 FORMS    += mainwindow.ui \
     settingsdialog.ui \

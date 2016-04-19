@@ -1,46 +1,39 @@
 #include "testparamset.h"
 #include "ui_testparamset.h"
-#include "mainwindow.h"
 
-TestParamSet::TestParamSet(QWidget *parent) :
+testparamset::testparamset(QWidget *parent) :
     QDialog(parent),
-    ui(new Ui::TestParamSet)
+    ui(new Ui::testparamset)
 {
     ui->setupUi(this);
-
-    cannyParam1 = ui->cannyP1->text().toInt();
-    cannyParam2 = ui->cannyP2->text().toInt();
-
-    isAuto = ui->autoSetThre->isChecked();
-    isFindLines = ui->findLinesChecked->isChecked();
+    steps = 0;
 }
 
-TestParamSet::~TestParamSet()
+testparamset::~testparamset()
 {
     delete ui;
 }
 
-void TestParamSet::on_pushButton_clicked()
+void testparamset::on_verticalSlider_sliderMoved(int position)
 {
-   cannyParam1 = ui->cannyP1->text().toInt();
-   cannyParam2 = ui->cannyP2->text().toInt();
-
-    hide();
-
+    steps = position;
+    stepReverse();
+    emit refresh();
 }
 
-void TestParamSet::on_autoSetThre_stateChanged(int arg1)
+void testparamset::stepReverse()
 {
-    isAuto = ui->autoSetThre->isChecked();
+    steps = 9 - steps;
 }
 
-
-void TestParamSet::on_checkBox_stateChanged(int arg1)
+void testparamset::on_do1_clicked()
 {
-
+    do1 = ui->do1->isChecked();
+        emit refresh();
 }
 
-void TestParamSet::on_findLinesChecked_stateChanged(int arg1)
+void testparamset::on_do2_clicked()
 {
-    isFindLines = ui->findLinesChecked->isChecked();
+    do2 = ui->do2->isChecked();
+        emit refresh();
 }

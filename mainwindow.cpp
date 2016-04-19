@@ -59,6 +59,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(myObject->tcpClient->tcpSocket,SIGNAL(disconnected()),this,SLOT(setConnectionFail()));
     connect(myObject->tcpClient->tcpSocket,SIGNAL(readyRead()),this,SLOT(readCMD()));
 
+    connect(myLineFinder->testParam,SIGNAL(refresh()),this,SLOT(receiveRefresh()));
+
     myObject->moveToThread(myThreadA);
     myThreadA->start();
 
@@ -67,7 +69,6 @@ MainWindow::MainWindow(QWidget *parent) :
  //    SetScreen(":/images/initialScreen.jpg");
         SetScreen(":/images/ceti1.png");
 //     qDebug()<<videoFrameLabel->size().width();
-
 }
 
 // Load video to process.
@@ -328,6 +329,12 @@ void MainWindow::savePictures()
              }
       }
 
+}
+
+void MainWindow::receiveRefresh()
+{
+    QResizeEvent *event;
+    resizeEvent(event);
 }
 
 cv::Mat MainWindow::loadFromQrc(QString qrc)

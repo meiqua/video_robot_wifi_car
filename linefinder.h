@@ -23,7 +23,7 @@ public:
 
     cv::Mat getEdge(cv::Mat const& src);
 
-    std::vector< std::vector<cv::Vec4i> > findLines(cv::Mat& src);
+    std::vector< std::vector<cv::Vec4i> > findLines(cv::Mat& edge);
 
     std::vector<cv::Vec4i> predictLines(std::vector< std::vector<cv::Vec4i> >& clusteredLines,int cols);
 
@@ -31,12 +31,11 @@ public:
 
     bool findCombinedLine(cv::Vec4i& line1,cv::Vec4i& line2);
 
-    cv::Mat drawLinesOn(cv::Mat& backg,std::vector<cv::Vec4i>& lines);
+    cv::Mat drawLines(cv::Mat& backg, std::vector<cv::Vec4i>& lines,cv::Scalar color);
 
     cv::Mat testAction(cv::Mat& src);
 
-     TestParamSet* testParam;
-private:
+     testparamset* testParam;
 
 };
 

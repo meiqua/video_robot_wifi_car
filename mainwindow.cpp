@@ -74,11 +74,10 @@ void MainWindow::actionOpen() {
        videoCapture.open(address.toInt()); //open webcam on laptop when type in 0
       else
       {
-
            ui->statusBar->showMessage("opening....",2000);
 
             videoCapture.open((address.toStdString().c_str()));
-            //This capture is blocking,unfortunately I have not find a solution yet.
+            //This capture is blocking,unfortunately I have not found a unblocking solution yet.
          qDebug()<<"open ip address :" << videoCapture.isOpened() << endl;
       }
 

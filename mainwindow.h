@@ -22,7 +22,6 @@
 #include <iostream>
 #include <QUrl>
 #include <QNetworkAccessManager>
-#include <MyObject.h>
 #include <MyThread.h>
 #include <QMap>
 #include <QByteArray>
@@ -53,9 +52,6 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
-    void keyPressEvent(QKeyEvent *);
-    void keyReleaseEvent(QKeyEvent *);
-
 private slots:
 
     /** Load video to process.
@@ -70,9 +66,6 @@ private slots:
 
     void timeToDistribute();
 
-    void setConnectionSuccess();
-    void setConnectionFail();
-    void readCMD();
     void savePictures();
 
     void receiveRefresh();
@@ -86,15 +79,8 @@ private:
 
     cv::Mat loadFromQrc(QString qrc);
 
-    void intializeCMD();
-
     void SetScreen(QString qrc);
     QString imageOnScreen;
-
-    MyObject *myObject;
-    MyThread *myThreadA;
-
-    QMap<QString,QString> CMDmap;
 
     QLabel *msgLabel;
     Ui::MainWindow *ui;

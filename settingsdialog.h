@@ -21,7 +21,6 @@ class SettingsDialog : public QDialog
 public:
     struct Settings {
        QString IPaddress;
-       QString controlIP;
        QString picturePath;
     };
 
@@ -35,9 +34,7 @@ public:
 
 private slots:
 
-
     void on_applyButton_clicked();
-
 
     void on_defultButton_clicked();
 

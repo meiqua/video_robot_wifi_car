@@ -18,18 +18,12 @@ SOURCES += main.cpp\
         mainwindow.cpp \
     imageformat.cpp \
     settingsdialog.cpp \
-    TcpClient.cpp \
-    MyObject.cpp \
-    MyThread.cpp \
     linefinder.cpp \
     testparamset.cpp
 
 HEADERS  += mainwindow.h \
     imageformat.h \
     settingsdialog.h \
-    TcpClient.h \
-    MyObject.h \
-    MyThread.h \
     linefinder.h \
     testparamset.h
 
@@ -45,4 +39,5 @@ LIBS += E:\opencv\opencv3.0\opencv_file\lib\libopencv_*.a
 DISTFILES +=
 
 RESOURCES += \
-    images.qrc
+    images.qrc \
+    videos.qrc

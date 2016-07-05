@@ -11,7 +11,6 @@ SettingsDialog::SettingsDialog(QWidget *parent) :
     ui->setupUi(this);
 
     defaultSettings.IPaddress = ui->IPaddress->text();
-    defaultSettings.controlIP = ui->controlIP->text();
     defaultSettings.picturePath = ui->picturePath->text();
 
     updateSettings();
@@ -37,7 +36,6 @@ void SettingsDialog::on_applyButton_clicked()
 void SettingsDialog::updateSettings()
 {
     currentSettings.IPaddress = ui->IPaddress->text();
-    currentSettings.controlIP = ui->controlIP->text();
     currentSettings.picturePath = ui->picturePath->text();
     defaultSettings.picturePath = currentSettings.picturePath;
 }
@@ -53,7 +51,6 @@ void SettingsDialog::updatePath(QString path)
 void SettingsDialog::on_defultButton_clicked()
 {
     ui->IPaddress->setText(defaultSettings.IPaddress);
-    ui->controlIP->setText(defaultSettings.controlIP);
     ui->picturePath->setText(defaultSettings.picturePath);
 }
 

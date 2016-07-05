@@ -1,0 +1,8 @@
+<RCC>
+    <qresource prefix="/">
+        <file>images/closeScreen.jpg</file>
+        <file>images/failScreen.jpg</file>
+        <file>images/initialScreen.jpg</file>
+        <file>images/ceti1.png</file>
+    </qresource>
+</RCC>

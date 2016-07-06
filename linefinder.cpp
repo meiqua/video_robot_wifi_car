@@ -155,14 +155,16 @@ int lineFinder::findKthMin(cv::Mat& src,int percent)
 {
     int min=0;
 
-    std::vector<int> vTemp;
+    int len=src.rows*src.cols;
+    int arrays[len];
+
     for(int i=0;i<src.rows;i++){
         for(int j=0;j<src.cols;j++){
-            vTemp.push_back(src.at<uchar>(i,j));
+            arrays[src.cols*i+j]=src.at<uchar>(i,j);
         }
     }
-    std::nth_element(vTemp.begin(),vTemp.begin()+vTemp.size()/percent,vTemp.end());
-    min=vTemp[vTemp.size()/percent];
+    std::nth_element(arrays,arrays+len/percent,arrays+len);
+    min=arrays[len/percent];
 
     return min;
 }

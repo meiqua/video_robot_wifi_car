@@ -114,6 +114,9 @@
    <addaction name="separator"/>
    <addaction name="actionTestParamSet"/>
    <addaction name="separator"/>
+   <addaction name="actionStart"/>
+   <addaction name="actionStop"/>
+   <addaction name="actionSelect"/>
   </widget>
   <widget class="QStatusBar" name="statusBar">
    <property name="font">
@@ -158,6 +161,21 @@
   <action name="actionTestParamSet">
    <property name="text">
     <string>testParamSet</string>
+   </property>
+  </action>
+  <action name="actionStart">
+   <property name="text">
+    <string>start</string>
+   </property>
+  </action>
+  <action name="actionStop">
+   <property name="text">
+    <string>stop</string>
+   </property>
+  </action>
+  <action name="actionSelect">
+   <property name="text">
+    <string>select</string>
    </property>
   </action>
  </widget>

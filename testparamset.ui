@@ -23,13 +23,13 @@
     </rect>
    </property>
    <property name="maximum">
-    <number>9</number>
+    <number>5</number>
    </property>
    <property name="pageStep">
     <number>1</number>
    </property>
    <property name="sliderPosition">
-    <number>9</number>
+    <number>5</number>
    </property>
    <property name="orientation">
     <enum>Qt::Vertical</enum>
@@ -70,7 +70,7 @@
     <string>2</string>
    </property>
   </widget>
-  <widget class="QWidget" name="">
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
      <x>50</x>
@@ -83,7 +83,7 @@
     <item>
      <widget class="QLabel" name="label">
       <property name="text">
-       <string>find gradient threshold using otsu</string>
+       <string>find gradient threshold using average</string>
       </property>
      </widget>
     </item>
@@ -95,37 +95,9 @@
      </widget>
     </item>
     <item>
-     <widget class="QLabel" name="label_3">
-      <property name="text">
-       <string>find brightness threshold,in area around edge</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QLabel" name="label_5">
-      <property name="text">
-       <string>find edge of the binary image</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QLabel" name="label_6">
-      <property name="text">
-       <string>combine both edges</string>
-      </property>
-     </widget>
-    </item>
-    <item>
      <widget class="QLabel" name="label_7">
       <property name="text">
        <string>remove unwanted edge</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QLabel" name="label_8">
-      <property name="text">
-       <string>repeat above steps for one time</string>
       </property>
      </widget>
     </item>
@@ -146,26 +118,30 @@
     <item>
      <widget class="QLabel" name="label_10">
       <property name="text">
-       <string>predict lines</string>
+       <string>predict error</string>
       </property>
      </widget>
     </item>
    </layout>
   </widget>
+  <widget class="QLabel" name="label_11">
+   <property name="geometry">
+    <rect>
+     <x>340</x>
+     <y>200</y>
+     <width>54</width>
+     <height>12</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+  </widget>
+  <zorder>layoutWidget</zorder>
   <zorder>verticalSlider</zorder>
-  <zorder>label</zorder>
-  <zorder>label_2</zorder>
-  <zorder>label_3</zorder>
-  <zorder>label_4</zorder>
-  <zorder>label_5</zorder>
-  <zorder>label_6</zorder>
-  <zorder>label_7</zorder>
-  <zorder>label_8</zorder>
-  <zorder>label_9</zorder>
-  <zorder>label_10</zorder>
-  <zorder>label</zorder>
   <zorder>do1</zorder>
   <zorder>do2</zorder>
+  <zorder>label_11</zorder>
  </widget>
  <resources/>
  <connections/>

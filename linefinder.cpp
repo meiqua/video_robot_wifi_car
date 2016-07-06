@@ -3,123 +3,147 @@
 #include <vector>
 #include <cmath>
 #include <limits>
+lineFinder::lineFinder()
+{
+    testParam = new testparamset;
+    trackedLine[0]=trackedLine[1]=trackedLine[2]=trackedLine[3]=0;
+}
 
 cv::Mat lineFinder::testAction(cv::Mat& src)
 {
     cv::Mat backg = getEdge(src);
+    rowsConst=src.rows;
+    colsConst=src.cols;
 
-    if(testParam->steps >= 7)
-    {
-        std::vector< std::vector<cv::Vec4i> > clusteredLines = findLines(backg);
-        std::vector<cv::Vec4i>& lineUp = clusteredLines.at(0);
-        std::vector<cv::Vec4i>& lineDown = clusteredLines.at(1);
-        std::vector<cv::Vec4i> lines;
-        lines.insert(lines.end(),lineUp.begin(),lineUp.end());
-        lines.insert(lines.end(),lineDown.begin(),lineDown.end());
+    std::vector<cv::Vec4i> lines = findLines(backg);
+    foundLines=lines;
+    updateTrackedLine();
 
  //        qDebug()<<"size of lines: "<<lines.size() ;
 
-        backg = drawLines(backg,lines,cv::Scalar(0,0,255));
+        backg = drawLines(backg,lines,cv::Scalar(0,255,0));
+
+        cv::Vec4i midLine;
+        midLine[0]=midLine[2]=src.cols/2;
+        midLine[1]=0;
+        midLine[3]=src.rows-1;
+        std::vector<cv::Vec4i> midLines;
+        midLines.push_back(midLine);
+        backg = drawLines(backg,midLines,cv::Scalar(255,0,0));
+
+        cv::Vec4i predictLine;
+        predictLine[0]=colsConst/2;
+        predictLine[1]=rowsConst/2;
+        predictLine[2]=calIntersection(trackedLine,rowsConst,0.5);
+        predictLine[3]=rowsConst/2;
+        std::vector<cv::Vec4i> predictLines;
+        predictLines.push_back(predictLine);
+        backg = drawLines(backg,predictLines,cv::Scalar(0,0,255));
 
 
-        if(testParam->steps >= 9)
-        {
-           std::vector<cv::Vec4i> preLines;
-           preLines = predictLines(clusteredLines,src.cols);
-           backg = drawLines(backg,preLines,cv::Scalar(0,255,0));
-           qDebug()<<"here" ;
+        return backg;
+}
+
+void lineFinder::updateTrackedLine()
+{
+    if(trackedLine[0]==0&&trackedLine[1]==0&&trackedLine[2]==0&&trackedLine[3]==0){
+        selectLine();
+    }else{
+        int intersectionOfTracked=calIntersection(trackedLine,rowsConst,0.5);
+        bool findNewOne=false;
+        for(int i=0;i<foundLines.size();i++){
+            int intersectionTemp=calIntersection(foundLines[i],rowsConst,0.5);
+            if(std::abs(intersectionOfTracked-intersectionTemp)<20){
+                trackedLine=foundLines[i];
+                findNewOne=true;
+            }
         }
-
+        if(!findNewOne){
+            emit lineMiss();
+        }
     }
+}
 
-    return backg;
+void lineFinder::selectLine()
+{
+    int minDistance=colsConst;
+    int minDisIndex=0;
+    for(int i=0;i<foundLines.size();i++){
+        int intersectionTemp=calIntersection(foundLines[i],rowsConst,0.5);
+        if(std::abs(colsConst/2-intersectionTemp)<minDistance){
+            minDistance=std::abs(colsConst/2-intersectionTemp);
+            minDisIndex=i;
+        }
+    }
+    trackedLine=foundLines[minDisIndex];
 }
 
 cv::Mat lineFinder::getEdge(cv::Mat const& src1)
 {
-     cv::Mat src,edge,cannyEdge,binaryEdge,noUse,testEdge,GraMagni;
-     double lightThresh,graThresh;
+    cv::Mat src,dst;
     cv::cvtColor(src1,src,CV_BGR2GRAY);
-
     src.convertTo(src,CV_8UC1);
-    cv::blur(src,src,cv::Size(3,3),cv::Point(-1,-1));
+  //  cv::blur(src,src,cv::Size(3,3),cv::Point(-1,-1));
 
-    GraMagni = findGraMagni(src);
-    graThresh = cv::threshold(GraMagni, noUse, 0, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
-    if(testParam->steps == 0)
-        testEdge = GraMagni.clone();
+    cv::Mat edge(src.rows,src.cols,src.type(),cv::Scalar(0));
 
-    noUse.release();
+    int winWidth=int(src.rows/5);
+    int winheight=int(src.cols/20);
+    cv::Mat window(winWidth,winheight,src.type(),cv::Scalar(0));
 
-       cv::Canny(src,cannyEdge,graThresh/2,graThresh,3);
-       if(testParam->steps == 1)
-           testEdge = cannyEdge.clone();
+    int globalMin = findKthMin(src,10);
 
-       lightThresh =  findThreshAtEdge(src,cannyEdge);
+    for(int i=0;i<src.rows-winWidth;i+=int(winWidth*2/4)){
+        for(int j=0;j<src.cols-winheight;j+=winheight){
 
-       if(testParam->steps == 2)
-       {
-           cv::threshold(src, testEdge, lightThresh, 255, CV_THRESH_BINARY);
+            for(int m=0;m<winWidth;m++){
+                for(int n=0;n<winheight;n++){
+                    window.at<uchar>(m,n)=src.at<uchar>(i+m,j+n);
+                }
+            }
 
-           if(testParam->do1)
-           cv::dilate(testEdge,testEdge,cv::Mat(),cv::Point(-1, -1),1);
+            int localMin=findKthMin(window,10);
 
-           if(testParam->do2)
-           cv::erode(testEdge,testEdge,cv::Mat(),cv::Point(-1, -1),1);
-       }
+            for(int m=0;m<winWidth;m++){
+                for(int n=0;n<winheight;n++){
+                    if(window.at<uchar>(m,n)<localMin&&window.at<uchar>(m,n)<globalMin){
+                        window.at<uchar>(m,n)=1;
+                    }else{
+                        window.at<uchar>(m,n)=0;
+                    }
+                }
+            }
 
+        //    window=thinImage(window,-1);
 
-       binaryEdge = findEdgeByBinary(src,lightThresh);
-       if(testParam->steps == 3)
-           testEdge = binaryEdge.clone();
+            for(int m=0;m<winWidth;m++){
+                for(int n=0;n<winheight;n++){
+                    if(window.at<uchar>(m,n)>0){
+                        edge.at<uchar>(i+m,j+n)=255;
+                    }
+                }
+            }
+        }
+    }
+    edge=thinImage(edge,-1);
 
-       edge = edgeCombine(cannyEdge,binaryEdge);
-       if(testParam->steps == 4)
-           testEdge = edge.clone();
-
-       edge = rmEdge(src,edge);
-       if(testParam->steps == 5)
-           testEdge = edge.clone();
-
-for(int i=0;i<1;i++)
-{
-    graThresh = findThreshAtEdge(GraMagni,edge);
-    cv::Canny(src,cannyEdge,graThresh/2,graThresh,3);
-    lightThresh =  findThreshAtEdge(src,cannyEdge);
-    binaryEdge = findEdgeByBinary(src,lightThresh);
-    edge = edgeCombine(cannyEdge,binaryEdge);
-    edge = rmEdge(src,edge);
-
-}
-if(testParam->steps >= 6)
-    testEdge = edge.clone();
-
-    edge = testEdge;
-
-    cv::cvtColor(edge,edge,CV_GRAY2BGR);
-    return edge;
+    cv::cvtColor(edge,dst,CV_GRAY2BGR);
+    return dst;
 }
 
-std::vector< std::vector<cv::Vec4i> > lineFinder::findLines(cv::Mat& edge)
+std::vector<cv::Vec4i>  lineFinder::findLines(cv::Mat& edge)
 {
       cv::cvtColor(edge,edge,CV_BGR2GRAY);
       std::vector<cv::Vec4i> lines,nouse;
 
-      int countNonZero = cv::countNonZero(edge);
+      int threshold = edge.rows/4;
 
-      cv::HoughLinesP(edge, lines, 3, CV_PI/180*3, countNonZero/15, countNonZero/15, edge.cols );
+      cv::HoughLinesP(edge, lines, 4, CV_PI/180*4, threshold, threshold, edge.rows );
 //      qDebug()<<"size of lines2: "<<countNonZero ;
 
-      std::vector< std::vector<cv::Vec4i> > myLineCluster;
+      std::vector<cv::Vec4i>  myLineCluster;
 
-      if(testParam->steps >= 8)
-      {
-          myLineCluster = lineCluster(lines,edge.rows);
-      }else
-      {
-          myLineCluster.push_back(lines);
-          myLineCluster.push_back(nouse);
-      }
+      myLineCluster = lineCluster(lines,edge.rows);
 
   //    qDebug()<<"size of lines: "<<lines.size();
 
@@ -127,283 +151,89 @@ std::vector< std::vector<cv::Vec4i> > lineFinder::findLines(cv::Mat& edge)
       return myLineCluster;
 }
 
-cv::Mat lineFinder::findGraMagni(cv::Mat& src)
+int lineFinder::findKthMin(cv::Mat& src,int percent)
 {
-    cv::Mat gx,gy,graMagni;
-    cv::Sobel(src,gx,CV_32FC1,1,0);
-    cv::Sobel(src,gy,CV_32FC1,0,1);
+    int min=0;
 
-    cv::magnitude(gx,gy,graMagni);
-    graMagni.convertTo(graMagni,CV_8UC1);
-
-    return graMagni;
-}
-
-cv::Mat lineFinder::rmEdge(cv::Mat& src,cv::Mat& edge)
-{
-//    cv::Mat edge = findEdgeByCanny(src);
- //   cv::Mat graPhase = findGraPhase(src);
-
-    cv::Mat gx,gy;
-
-    cv::Sobel(src,gx,CV_16S,1,0);
-    cv::Sobel(src,gy,CV_16S,0,1);
-
-
-
-    int rows = edge.rows;
-    int cols = edge.cols;
-    short a;
-    for(int i=0;i<rows;i++)
-    {
-        uchar* edgeElement = edge.ptr<uchar>(i);
-        for(int j=0;j<cols;j++)
-        {
-            if(edgeElement[j]>0)
-            {
-                a = cv::fastAtan2(gy.at<short>(i, j), gx.at<short>(i, j));
-
-//                if(a!=0)
-//                qDebug()<<a<<endl;
-
-                if(a>180)
-                {
-                    a = a - 360;
-                }
-
-                if((a>-30&&a<30)||(a<-150||a>150)||
-                        (i<rows/2&&a>0) ||
-                        (i>=rows/2&&a<0))
-                {
-                    edgeElement[j] = 0;
-                }
-            }
+    std::vector<int> vTemp;
+    for(int i=0;i<src.rows;i++){
+        for(int j=0;j<src.cols;j++){
+            vTemp.push_back(src.at<uchar>(i,j));
         }
     }
-    return edge;
+    std::nth_element(vTemp.begin(),vTemp.begin()+vTemp.size()/percent,vTemp.end());
+    min=vTemp[vTemp.size()/percent];
+
+    return min;
 }
 
-double lineFinder::findThreshAtEdge( cv::Mat const& src, cv::Mat const& edgeOriginal)
+std::vector<cv::Vec4i> lineFinder::lineCluster(std::vector<cv::Vec4i> lines,int rows)
 {
-//    cv::Mat edge = findEdgeByCanny(src);
-//     edge = rmEdge(edge);
-    cv::Mat srcCopied = src.clone();
-    cv::Mat edge;
-    cv::dilate(edgeOriginal,edge,cv::Mat(3,3,CV_8U),cv::Point(-1, -1),1);
-
-    int rows = src.rows;
-    int cols = src.cols;
-    uchar* srcCopiedElement;
-    uchar* edgeElement;
-    for(int i=0;i<rows;i++)
-    {
-        edgeElement = edge.ptr<uchar>(i);
-        srcCopiedElement = srcCopied.ptr<uchar>(i);
-        for(int j=0;j<cols;j++)
-        {
-            if(edgeElement[j]==0)
-            {
-                srcCopiedElement[j] = 0;
-            }
-        }
-    }
-
-    int countNonZero = cv::countNonZero(srcCopied);
-    int count = 0;
-    cv::Mat matToFindThre(1,countNonZero,CV_8UC1);
-    uchar* matToFindThreElement = matToFindThre.ptr<uchar>(0);
-
-    for(int i=0;i<rows;i++)
-    {
-        srcCopiedElement = srcCopied.ptr<uchar>(i);
-        for(int j=0;j<cols;j++)
-        {
-            if(srcCopiedElement[j]>0)
-            {
-                matToFindThreElement[count] = srcCopiedElement[j];
-                count++;
-            }
-        }
-    }
-    cv::Mat noUse;
-    double LightThresh = cv::threshold(matToFindThre, noUse, 0, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
-    return LightThresh;
-}
-
-cv::Mat lineFinder::findEdgeByBinary(cv::Mat& src,double Thresh)
-{
-    cv::Mat binarySrc,binaryEdge;
-    cv::threshold(src, binarySrc, Thresh, 255, CV_THRESH_BINARY);
-    // cv::Laplacian(binarySrc,binaryEdge,CV_8U);
-   // binarySrc.convertTo(binarySrc,CV_8UC1);
-//    cv::dilate(binarySrc,binarySrc,cv::Mat(),cv::Point(-1, -1),1);
-//    cv::erode(binarySrc,binarySrc,cv::Mat(),cv::Point(-1, -1),1);
-
-    cv::Canny(binarySrc,binaryEdge,254,254,3);
-
-    return binaryEdge;
-}
-
-cv::Mat lineFinder::edgeCombine(cv::Mat& cannyEdge,cv::Mat& binaryEdge)
-{
-   cv::dilate(binaryEdge,binaryEdge,cv::Mat(),cv::Point(-1, -1),1);
-    int rows = cannyEdge.rows;
-    int cols = cannyEdge.cols;
-
-    if(cannyEdge.isContinuous())
-    {
-        cols = cols*rows*cannyEdge.channels();
-        rows = 1;
-    }
-
-    for(int i=0;i<rows;i++)
-    {
-        uchar* cannyEdgeElement = cannyEdge.ptr<uchar>(i);
-
-        for(int j=0;j<cols;j++)
-        {
-            if(cannyEdgeElement[j]>0)
-            {
-              uchar*  binaryEdgeElement = binaryEdge.ptr<uchar>(i);
-                if(binaryEdgeElement[j]==0)
-                {
-                    cannyEdgeElement[j]=0;
-                }
-            }
-        }
-    }
-    return cannyEdge;
-}
-
-std::vector<cv::Vec4i> lineFinder::predictLines(std::vector<std::vector<cv::Vec4i> >& clusteredLines,int cols)
-{
-    std::vector<cv::Vec4i>& lineUp = clusteredLines.at(0);
-    std::vector<cv::Vec4i>& lineDown = clusteredLines.at(1);
-
- //   qDebug()<<"size of clustered lineUp: "<<lineDown.size();
-
-    std::vector<cv::Vec4i> preLines;
-    for(size_t upIter=0;upIter<lineUp.size();upIter++){
-        for(size_t downIter=0;downIter<lineDown.size();downIter++){
-            cv::Vec4i& line1 = lineUp.at(upIter);
-            cv::Vec4i& line2 = lineDown.at(downIter);
-
-            double a1 = (line1[1]-line1[3])/(double)(line1[0]-line1[2]);
-            double b1 = line1[1]-a1*line1[0];
-
-            double a2 = (line2[1]-line2[3])/(double)(line2[0]-line2[2]);
-            double b2 = line2[1]-a2*line2[0];
-
-            double x,y,a,b;
-            a = (a1+a2)/2;
-
-            if(std::abs(a1-a2)<std::numeric_limits<double>::epsilon())   {//parallel
-                b = (b1+b2)/2;
-            }else{
-                x = (b2 - b1) / (a1 - a2);
-                y = a1 * x + b1;
-                b = y - a*x;
-            }
-
-            cv::Vec4i line;
-            line[0] = 0;
-            line[1] = int(b);
-            line[2] = cols-1;
-            line[3] = int(a*line[2]+b);
-
-            preLines.push_back(line);
-        }
-    }
-    return preLines;
-}
-
-std::vector< std::vector<cv::Vec4i> > lineFinder::lineCluster(std::vector<cv::Vec4i> lines,int rows)
-{
-    std::vector<cv::Vec4i> clusteredLinesUp,clusteredLinesDown;
-    for( size_t i = 0; i < lines.size(); i++ )
-    {
+    std::vector<cv::Vec4i> clusteredLines;
+    QList<int> intersectionList;
+    QList<int> clusteredNum;
+    for( size_t i = 0; i < lines.size(); i++ ){
       cv::Vec4i& l = lines[i];
-      double a1 = (l[1]-l[3])/(double)(l[0]-l[2]);
-      if(l[1]<rows/2&&l[3]<rows/2)   {       
-        if(std::abs(a1)<0.6){  //gradient bigger than 31 degree
-        clusteredLinesUp.push_back(l);
-        }
-      }else if (l[1]>rows/2&&l[3]>rows/2)    {
-        if(std::abs(a1)<0.6){  //gradient bigger than 31 degree
-        clusteredLinesDown.push_back(l);
-        }
+      bool verticalFlag=false;
+      if((l[0]-l[2])==0){
+         verticalFlag=true;
+      }else if(std::abs((l[1]-l[3])/(double)(l[0]-l[2]))>1.732){
+          verticalFlag=true;
       }
-    }
-    std::vector< std::vector<cv::Vec4i> > lineCluster;
-    lineCluster.push_back(clusteredLinesUp);
-    lineCluster.push_back(clusteredLinesDown);
+      if(verticalFlag){
+          int intersectionTemp=calIntersection(l,rows,0.5);
+          if(intersectionList.isEmpty()){
+              intersectionList.append(intersectionTemp);
+              clusteredNum.append(1);
+              clusteredLines.push_back(l);
+          }else{
+              bool addClusterFlag=true;
+              for(int i=0;i<intersectionList.size();i++){
+                  if(std::abs(intersectionTemp-intersectionList.at(i))<10){
+                      addClusterFlag=false;
 
-    for(size_t iter=0;iter<lineCluster.size();iter++) {
-      std::vector<cv::Vec4i>& clusteredLines = lineCluster.at(iter);
-      //& is very important, because we want to change the original data
-      //actually in java, & can be removed
-      bool breakFlag = 0;
-      size_t size = clusteredLines.size();
+                      clusteredNum[i]++;
 
-      while(1){
+                      int updatedIntersection=
+                              ((clusteredNum[i]-1)*intersectionList.at(i)
+                               +intersectionTemp)/clusteredNum[i];
+                      intersectionList[i]=updatedIntersection;
 
-          if(size == 0)
-              break;
+                      cv::Vec4i lineTemp;
+                      lineTemp[1]=0;
+                      lineTemp[3]=rows;
+                      int stored0=calIntersection(clusteredLines[i],rows,0);
+                      int stored2=calIntersection(clusteredLines[i],rows,1);
+                      int new0=calIntersection(l,rows,0);
+                      int new2=calIntersection(l,rows,1);
+                      lineTemp[0]=(stored0*(clusteredNum[i]-1)+new0)/clusteredNum[i];
+                      lineTemp[2]=(stored2*(clusteredNum[i]-1)+new2)/clusteredNum[i];
 
-          for( size_t i = 0; i < clusteredLines.size()-1; i++ )  {
-              cv::Vec4i &line1 = clusteredLines[i];
-
-              for( size_t j = i+1; j < clusteredLines.size(); j++ ) {
-                  cv::Vec4i& line2 = clusteredLines[j];
-                  if(findCombinedLine(line1,line2))  {
-                      clusteredLines.erase(clusteredLines.begin()+j);
-                      breakFlag = 1;
-                      break;
+                      clusteredLines[i]=lineTemp;
                   }
               }
-              if(breakFlag) {
-                  breakFlag = 0;
-                  break;
+              if(addClusterFlag){
+                  intersectionList.append(intersectionTemp);
+                  clusteredNum.append(1);
+                  clusteredLines.push_back(l);
               }
           }
-          if(clusteredLines.size()<size)      {
-              size = clusteredLines.size();
-              continue;
-          }else{
-              break;
-          }
       }
-
-
-
     }
 
 //    qDebug()<<"size of lineCluster[0]: "<<lineCluster[0].size();
-    return lineCluster;
-
-
+    return clusteredLines;
 }
 
-bool lineFinder::findCombinedLine(cv::Vec4i& line1, cv::Vec4i& line2)
+int lineFinder::calIntersection(cv::Vec4i l, int rows,float location)
 {
-    double a1 = (line1[1]-line1[3])/(double)(line1[0]-line1[2]);
-    double b1 = line1[1]-a1*line1[0];
-
-    double a2 = (line2[1]-line2[3])/(double)(line2[0]-line2[2]);
-    double b2 = line2[1]-a2*line2[0];
-
-//    if(std::abs(a1-a2)<std::numeric_limits<double>::epsilon())   {//parallel
-    if(std::abs(a1-a2)<=0.1){ // we think 6 degree is parallel enough
-        if((std::abs(b1-b2)*(1-a1*a2))<6)
-            return true;
-        else
-            return false;
-    }else if (std::abs(a1-a2)> 0.1) // > 6 degree
-    {
-        return false;
+    int temp=int(rows*location);
+    if(temp>=rows){
+        temp=rows-1;
+    }else if(temp<0){
+        temp=0;
     }
-
-    return false;
+   return((temp-l[3])/((l[1]-l[3])/(double)(l[0]-l[2]))+l[2]);
 }
 
 cv::Mat lineFinder::drawLines(cv::Mat& backg, std::vector<cv::Vec4i>& lines,cv::Scalar color)
@@ -417,8 +247,135 @@ cv::Mat lineFinder::drawLines(cv::Mat& backg, std::vector<cv::Vec4i>& lines,cv::
     return backg;
 }
 
-lineFinder::lineFinder()
+cv::Mat lineFinder::thinImage(const cv::Mat & src, const int maxIterations)
 {
-    testParam = new testparamset;
-}
+    cv::Mat dst;
+    int width  = src.cols;
+    int height = src.rows;
+    src.copyTo(dst);
+    int count = 0;  //记录迭代次数
+    while (true)
+    {
+        count++;
+        if (maxIterations != -1 && count > maxIterations) //限制次数并且迭代次数到达
+            break;
+        std::vector<uchar *> mFlag; //用于标记需要删除的点
+        //对点标记
+        for (int i = 0; i < height ;++i)
+        {
+            uchar * p = dst.ptr<uchar>(i);
+            for (int j = 0; j < width; ++j)
+            {
+                //如果满足四个条件，进行标记
+                //  p9 p2 p3
+                //  p8 p1 p4
+                //  p7 p6 p5
+                uchar p1 = p[j];
+                if (p1 == 0) continue;
+                uchar p4 = (j == width - 1) ? 0 : *(p + j + 1);
+                uchar p8 = (j == 0) ? 0 : *(p + j - 1);
+                uchar p2 = (i == 0) ? 0 : *(p - dst.step + j);
+                uchar p3 = (i == 0 || j == width - 1) ? 0 : *(p - dst.step + j + 1);
+                uchar p9 = (i == 0 || j == 0) ? 0 : *(p - dst.step + j - 1);
+                uchar p6 = (i == height - 1) ? 0 : *(p + dst.step + j);
+                uchar p5 = (i == height - 1 || j == width - 1) ? 0 : *(p + dst.step + j + 1);
+                uchar p7 = (i == height - 1 || j == 0) ? 0 : *(p + dst.step + j - 1);
+                if ((((((p2 + p3 + p4 + p5 + p6 + p7 + p8 + p9) >= 2*255
+                        && (p2 + p3 + p4 + p5 + p6 + p7 + p8 + p9) <= 6*255)))))
+                {
+                    int ap = 0;
+                    if (p2 == 0 && p3 != 0) ++ap;
+                    if (p3 == 0 && p4 != 0) ++ap;
+                    if (p4 == 0 && p5 != 0) ++ap;
+                    if (p5 == 0 && p6 != 0) ++ap;
+                    if (p6 == 0 && p7 != 0) ++ap;
+                    if (p7 == 0 && p8 != 0) ++ap;
+                    if (p8 == 0 && p9 != 0) ++ap;
+                    if (p9 == 0 && p2 != 0) ++ap;
 
+                    if (ap == 1 && p2 * p4 * p6 == 0 && p4 * p6 * p8 == 0)
+                    {
+                        //标记
+                        mFlag.push_back(p+j);
+                    }
+                }
+            }
+        }
+
+        //将标记的点删除
+        for (std::vector<uchar *>::iterator i = mFlag.begin(); i != mFlag.end(); ++i)
+        {
+            **i = 0;
+        }
+
+        //直到没有点满足，算法结束
+        if (mFlag.empty())
+        {
+            break;
+        }
+        else
+        {
+            mFlag.clear();//将mFlag清空
+        }
+
+        //对点标记
+        for (int i = 0; i < height; ++i)
+        {
+            uchar * p = dst.ptr<uchar>(i);
+            for (int j = 0; j < width; ++j)
+            {
+                //如果满足四个条件，进行标记
+                //  p9 p2 p3
+                //  p8 p1 p4
+                //  p7 p6 p5
+                uchar p1 = p[j];
+                if (p1 == 0) continue;
+                uchar p4 = (j == width - 1) ? 0 : *(p + j + 1);
+                uchar p8 = (j == 0) ? 0 : *(p + j - 1);
+                uchar p2 = (i == 0) ? 0 : *(p - dst.step + j);
+                uchar p3 = (i == 0 || j == width - 1) ? 0 : *(p - dst.step + j + 1);
+                uchar p9 = (i == 0 || j == 0) ? 0 : *(p - dst.step + j - 1);
+                uchar p6 = (i == height - 1) ? 0 : *(p + dst.step + j);
+                uchar p5 = (i == height - 1 || j == width - 1) ? 0 : *(p + dst.step + j + 1);
+                uchar p7 = (i == height - 1 || j == 0) ? 0 : *(p + dst.step + j - 1);
+
+                if ((((((p2 + p3 + p4 + p5 + p6 + p7 + p8 + p9) >= 2*255
+                        && (p2 + p3 + p4 + p5 + p6 + p7 + p8 + p9) <= 6*255)))))
+                {
+                    int ap = 0;
+                    if (p2 == 0 && p3 != 0) ++ap;
+                    if (p3 == 0 && p4 != 0) ++ap;
+                    if (p4 == 0 && p5 != 0) ++ap;
+                    if (p5 == 0 && p6 != 0) ++ap;
+                    if (p6 == 0 && p7 != 0) ++ap;
+                    if (p7 == 0 && p8 != 0) ++ap;
+                    if (p8 == 0 && p9 != 0) ++ap;
+                    if (p9 == 0 && p2 != 0) ++ap;
+
+                    if (ap == 1 && p2 * p4 * p8 == 0 && p2 * p6 * p8 == 0)
+                    {
+                        //标记
+                        mFlag.push_back(p+j);
+                    }
+                }
+            }
+        }
+
+        //将标记的点删除
+        for (std::vector<uchar *>::iterator i = mFlag.begin(); i != mFlag.end(); ++i)
+        {
+            **i = 0;
+        }
+
+        //直到没有点满足，算法结束
+        if (mFlag.empty())
+        {
+            break;
+        }
+        else
+        {
+            mFlag.clear();//将mFlag清空
+        }
+    }
+    return dst;
+}

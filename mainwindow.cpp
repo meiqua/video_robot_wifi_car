@@ -48,13 +48,18 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionConfigure, SIGNAL(triggered()), settings, SLOT(show()));
     connect(ui->actionCapture,SIGNAL(triggered()),this,SLOT(savePictures()));
 
+    connect(ui->actionStart,SIGNAL(triggered()),this,SLOT(startMyTimer()));
+    connect(ui->actionStop,SIGNAL(triggered()),this,SLOT(stopMyTimer()));
+    connect(ui->actionSelect,SIGNAL(triggered()),myLineFinder,SLOT(selectLine()));
+    connect(myLineFinder,SIGNAL(lineMiss()),this,SLOT(reportMiss()));
+
     connect(ui->actionTestParamSet, SIGNAL(triggered()), myLineFinder->testParam, SLOT(show()));
 
     connect(myLineFinder->testParam,SIGNAL(refresh()),this,SLOT(receiveRefresh()));
 
     // Set initial screen
  //    SetScreen(":/images/initialScreen.jpg");
-        SetScreen(":/images/ceti1.png");
+        SetScreen(":/images/test.png");
 //     qDebug()<<videoFrameLabel->size().width();
 }
 
@@ -88,7 +93,7 @@ void MainWindow::actionOpen() {
 
           // Get frame per second
           int fps=videoCapture.get(CV_CAP_PROP_FPS);
-
+          qDebug()<<"fps is: "<<fps<<endl;
           //   qDebug("fps: %d", fps);
 
           // Set timer interval
@@ -140,18 +145,16 @@ void MainWindow::timerLoop() {
     // Capture frame from video
     videoCapture>>rawFrame;
 
-    rawCopyFrame = rawFrame.clone();  //save as picture
-    frameForEdgeDetect = rawFrame.clone();
-    edge = myLineFinder->testAction(frameForEdgeDetect);
-
     // Check if frame was successfully captured.
     if (rawFrame.empty()) {
         timer->stop();
         ui->statusBar->showMessage("the remote camera send back empty frame",3000);
         SetScreen(":/images/failScreen.jpg");
         openSuccess = false;
-
     } else {
+        rawCopyFrame = rawFrame.clone();  //save as picture
+        frameForEdgeDetect = rawFrame.clone();
+        edge = myLineFinder->testAction(frameForEdgeDetect);
         int w ;
         int h ;
         int w2 ;
@@ -256,6 +259,25 @@ void MainWindow::receiveRefresh()
 {
     QResizeEvent *event;
     resizeEvent(event);
+}
+
+void MainWindow::startMyTimer()
+{
+    if (!timer->isActive())
+    timer->start();
+}
+
+void MainWindow::stopMyTimer()
+{
+    if (timer->isActive())
+        timer->stop();
+}
+
+void MainWindow::reportMiss()
+{
+    if (timer->isActive())
+        timer->stop();
+    ui->statusBar->showMessage("tracked line MISS !!!!!!!!",3000);
 }
 
 cv::Mat MainWindow::loadFromQrc(QString qrc)

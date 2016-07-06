@@ -39,5 +39,4 @@ LIBS += E:\opencv\opencv3.0\opencv_file\lib\libopencv_*.a
 DISTFILES +=
 
 RESOURCES += \
-    images.qrc \
-    videos.qrc
+    images.qrc

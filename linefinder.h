@@ -6,30 +6,23 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <testparamset.h>
 
-class lineFinder
+class lineFinder:public QObject
 {
+    Q_OBJECT
 public:
     lineFinder();
 
-    cv::Mat findGraMagni(cv::Mat& src);
+    cv::Mat thinImage(const cv::Mat & src, const int maxIterations);
 
-    cv::Mat rmEdge(cv::Mat& src,cv::Mat& edge);
-
-    double findThreshAtEdge( cv::Mat const& src, cv::Mat const& edge);
-
-    cv::Mat findEdgeByBinary(cv::Mat& src,double Thresh);
-
-    cv::Mat edgeCombine(cv::Mat& cannyEdge,cv::Mat& binaryEdge);
+    int findKthMin(cv::Mat& src,int percent);
 
     cv::Mat getEdge(cv::Mat const& src);
 
-    std::vector< std::vector<cv::Vec4i> > findLines(cv::Mat& edge);
+    std::vector<cv::Vec4i> findLines(cv::Mat& edge);
 
-    std::vector<cv::Vec4i> predictLines(std::vector< std::vector<cv::Vec4i> >& clusteredLines,int cols);
+    std::vector<cv::Vec4i>  lineCluster(std::vector<cv::Vec4i> lines,int rows);
 
-    std::vector< std::vector<cv::Vec4i> > lineCluster(std::vector<cv::Vec4i> lines,int rows);
-
-    bool findCombinedLine(cv::Vec4i& line1,cv::Vec4i& line2);
+    int calIntersection(cv::Vec4i line,int rows,float location);
 
     cv::Mat drawLines(cv::Mat& backg, std::vector<cv::Vec4i>& lines,cv::Scalar color);
 
@@ -37,6 +30,14 @@ public:
 
      testparamset* testParam;
 
+     cv::Vec4i trackedLine;
+     void updateTrackedLine();
+     int rowsConst,colsConst;
+     std::vector<cv::Vec4i> foundLines;
+public slots:
+     void selectLine();
+ signals:
+     lineMiss();
 };
 
 #endif // LINEFINDER_H

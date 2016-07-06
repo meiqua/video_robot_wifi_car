@@ -41,7 +41,7 @@
       <item>
        <widget class="QLineEdit" name="IPaddress">
         <property name="text">
-         <string>http://192.168.1.1:8080/?action=stream&amp;dummy=param.mjpg</string>
+         <string>C:\Users\meiqua\Desktop\vehicleCheckRobot\cameraMeasure\videos\camera_corrected_noBlueLine.avi</string>
         </property>
        </widget>
       </item>

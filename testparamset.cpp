@@ -28,7 +28,7 @@ void testparamset::on_verticalSlider_sliderMoved(int position)
 
 void testparamset::stepReverse()
 {
-    steps = 9 - steps;
+    steps = 5 - steps;
 }
 
 void testparamset::on_do1_clicked()

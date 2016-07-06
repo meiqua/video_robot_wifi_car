@@ -22,7 +22,6 @@
 #include <iostream>
 #include <QUrl>
 #include <QNetworkAccessManager>
-#include <MyThread.h>
 #include <QMap>
 #include <QByteArray>
 
@@ -69,6 +68,10 @@ private slots:
     void savePictures();
 
     void receiveRefresh();
+
+    void startMyTimer();
+    void stopMyTimer();
+    void reportMiss();
 protected:
     void resizeEvent(QResizeEvent *event);
 

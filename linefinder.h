@@ -24,6 +24,8 @@ public:
 
     int calIntersection(cv::Vec4i line,int rows,float location);
 
+    cv::Mat rmEdgeByGraDir(cv::Mat& src,cv::Mat& edge,int shift);
+
     cv::Mat drawLines(cv::Mat& backg, std::vector<cv::Vec4i>& lines,cv::Scalar color);
 
     cv::Mat testAction(cv::Mat& src);

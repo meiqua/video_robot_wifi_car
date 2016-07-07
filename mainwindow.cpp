@@ -304,6 +304,7 @@ void MainWindow::reportMiss()
     if (timer->isActive())
         timer->stop();
     ui->statusBar->showMessage("tracked line MISS !!!!!!!!",3000);
+    QMessageBox::information(NULL, "reportMiss", "tracked line MISS !!!!!!!!", QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
 }
 
 void MainWindow::actionForward()

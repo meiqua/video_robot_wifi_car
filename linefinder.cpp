@@ -19,8 +19,6 @@ cv::Mat lineFinder::testAction(cv::Mat& src)
     foundLines=lines;
     updateTrackedLine();
 
- //        qDebug()<<"size of lines: "<<lines.size() ;
-
         backg = drawLines(backg,lines,cv::Scalar(0,255,0));
 
         cv::Vec4i midLine;
@@ -53,7 +51,7 @@ void lineFinder::updateTrackedLine()
         bool findNewOne=false;
         for(int i=0;i<foundLines.size();i++){
             int intersectionTemp=calIntersection(foundLines[i],rowsConst,0.5);
-            if(std::abs(intersectionOfTracked-intersectionTemp)<20){
+            if(std::abs(intersectionOfTracked-intersectionTemp)<colsConst/5){
                 trackedLine=foundLines[i];
                 findNewOne=true;
             }
@@ -83,7 +81,6 @@ cv::Mat lineFinder::getEdge(cv::Mat const& src1)
     cv::Mat src,dst;
     cv::cvtColor(src1,src,CV_BGR2GRAY);
     src.convertTo(src,CV_8UC1);
-  //  cv::blur(src,src,cv::Size(3,3),cv::Point(-1,-1));
 
     cv::Mat edge(src.rows,src.cols,src.type(),cv::Scalar(0));
 
@@ -126,6 +123,9 @@ cv::Mat lineFinder::getEdge(cv::Mat const& src1)
         }
     }
     edge=thinImage(edge,-1);
+
+    edge=rmEdgeByGraDir(src,edge,2);
+    edge=rmEdgeByGraDir(src,edge,10);
 
     cv::cvtColor(edge,dst,CV_GRAY2BGR);
     return dst;
@@ -235,7 +235,53 @@ int lineFinder::calIntersection(cv::Vec4i l, int rows,float location)
     }else if(temp<0){
         temp=0;
     }
-   return((temp-l[3])/((l[1]-l[3])/(double)(l[0]-l[2]))+l[2]);
+    return((temp-l[3])/((l[1]-l[3])/(double)(l[0]-l[2]))+l[2]);
+}
+
+cv::Mat lineFinder::rmEdgeByGraDir(cv::Mat &src,cv::Mat& edge,int shift1)
+{
+    for(int i=0;i<src.rows;i++)
+    {
+        uchar* edgeElement = edge.ptr<uchar>(i);
+        for(int j=0;j<src.cols;j++){
+            if(edgeElement[j]>0){
+                for(int shift=1;shift<shift1;shift+=2){
+                    int upValue=i-shift;
+                    if(upValue<0)
+                        upValue=0;
+                    int downValue=i+shift;
+                    if(downValue>src.rows)
+                        downValue=src.rows;
+                    int leftValue=j-shift;
+                    if(leftValue<0)
+                        leftValue=0;
+                    int rightValue=j+shift;
+                    if(rightValue>src.cols)
+                        rightValue=src.cols;
+                    bool flagVertical=false;
+
+                    for(int iNest=0;iNest<int(shift*1.2);iNest++){
+                        int tempVertical=j-int(shift*0.6)+iNest;
+                        if(tempVertical<0)
+                            tempVertical=0;
+                        else if(tempVertical>src.cols)
+                            tempVertical=src.cols;
+                        if(edge.at<uchar>(upValue,tempVertical)>0||
+                                edge.at<uchar>(downValue,tempVertical)>0){
+                            flagVertical=true;
+                        }
+                }
+
+                if(flagVertical){
+                    edgeElement[j] = 255;
+                }else{
+                    edgeElement[j] = 0;
+                }
+            }
+        }
+        }
+    }
+    return edge;
 }
 
 cv::Mat lineFinder::drawLines(cv::Mat& backg, std::vector<cv::Vec4i>& lines,cv::Scalar color)

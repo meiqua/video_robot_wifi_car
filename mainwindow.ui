@@ -117,12 +117,24 @@
    <addaction name="actionStart"/>
    <addaction name="actionStop"/>
    <addaction name="actionSelect"/>
+   <addaction name="actionForward"/>
+   <addaction name="actionBackward"/>
   </widget>
   <widget class="QStatusBar" name="statusBar">
    <property name="font">
     <font>
      <pointsize>11</pointsize>
     </font>
+   </property>
+  </widget>
+  <widget class="QMenuBar" name="menuBar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>737</width>
+     <height>21</height>
+    </rect>
    </property>
   </widget>
   <action name="actionOpen">
@@ -176,6 +188,16 @@
   <action name="actionSelect">
    <property name="text">
     <string>select</string>
+   </property>
+  </action>
+  <action name="actionForward">
+   <property name="text">
+    <string>-&gt;</string>
+   </property>
+  </action>
+  <action name="actionBackward">
+   <property name="text">
+    <string>&lt;-</string>
    </property>
   </action>
  </widget>

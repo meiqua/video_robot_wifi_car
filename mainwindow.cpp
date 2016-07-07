@@ -40,6 +40,9 @@ MainWindow::MainWindow(QWidget *parent) :
 
      timer = new QTimer(this);
 
+     forwardCount=0;
+     backwardCount=0;
+
     // Connect slots
     connect(timer, SIGNAL(timeout()), this, SLOT(timerLoop()));
 
@@ -47,11 +50,15 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionClose,SIGNAL(triggered()),this,SLOT(actionClose()));
     connect(ui->actionConfigure, SIGNAL(triggered()), settings, SLOT(show()));
     connect(ui->actionCapture,SIGNAL(triggered()),this,SLOT(savePictures()));
+    connect(ui->actionForward,SIGNAL(triggered()),this,SLOT(actionForward()));
+    connect(ui->actionBackward,SIGNAL(triggered()),this,SLOT(actionBackward()));
 
     connect(ui->actionStart,SIGNAL(triggered()),this,SLOT(startMyTimer()));
     connect(ui->actionStop,SIGNAL(triggered()),this,SLOT(stopMyTimer()));
     connect(ui->actionSelect,SIGNAL(triggered()),myLineFinder,SLOT(selectLine()));
     connect(myLineFinder,SIGNAL(lineMiss()),this,SLOT(reportMiss()));
+
+
 
     connect(ui->actionTestParamSet, SIGNAL(triggered()), myLineFinder->testParam, SLOT(show()));
 
@@ -144,6 +151,8 @@ void MainWindow::timerLoop() {
 
     // Capture frame from video
     videoCapture>>rawFrame;
+    int currentFrame=int(videoCapture.get(CV_CAP_PROP_POS_FRAMES));
+    int totalFrame=int(videoCapture.get(CV_CAP_PROP_FRAME_COUNT));
 
     // Check if frame was successfully captured.
     if (rawFrame.empty()) {
@@ -152,6 +161,23 @@ void MainWindow::timerLoop() {
         SetScreen(":/images/failScreen.jpg");
         openSuccess = false;
     } else {
+        if(forwardCount>0){
+            int dstFrame=currentFrame+forwardCount;
+            if(dstFrame>totalFrame){
+              videoCapture.set(CV_CAP_PROP_POS_FRAMES,totalFrame);
+            }else{
+               videoCapture.set(CV_CAP_PROP_POS_FRAMES,dstFrame);
+            }
+            forwardCount=0;
+        }else if(backwardCount>0){
+            int dstFrame=currentFrame-backwardCount;
+            if(dstFrame<0){
+              videoCapture.set(CV_CAP_PROP_POS_FRAMES,0);
+            }else{
+               videoCapture.set(CV_CAP_PROP_POS_FRAMES,dstFrame);
+            }
+            backwardCount=0;
+        }
         rawCopyFrame = rawFrame.clone();  //save as picture
         frameForEdgeDetect = rawFrame.clone();
         edge = myLineFinder->testAction(frameForEdgeDetect);
@@ -278,6 +304,16 @@ void MainWindow::reportMiss()
     if (timer->isActive())
         timer->stop();
     ui->statusBar->showMessage("tracked line MISS !!!!!!!!",3000);
+}
+
+void MainWindow::actionForward()
+{
+    forwardCount=10;
+}
+
+void MainWindow::actionBackward()
+{
+    backwardCount=10;
 }
 
 cv::Mat MainWindow::loadFromQrc(QString qrc)

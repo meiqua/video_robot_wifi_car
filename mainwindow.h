@@ -72,6 +72,9 @@ private slots:
     void startMyTimer();
     void stopMyTimer();
     void reportMiss();
+
+    void actionForward();
+    void actionBackward();
 protected:
     void resizeEvent(QResizeEvent *event);
 
@@ -101,7 +104,8 @@ private:
     bool openSuccess;
     lineFinder* myLineFinder;
 
-
+    int forwardCount;
+    int backwardCount;
 };
 
 #endif // MAINWINDOW_H

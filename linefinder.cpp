@@ -48,15 +48,18 @@ void lineFinder::updateTrackedLine()
         selectLine();
     }else{
         int intersectionOfTracked=calIntersection(trackedLine,rowsConst,0.5);
-        bool findNewOne=false;
+        int minDis=1000;
+        int minDisIdx=0;
         for(int i=0;i<foundLines.size();i++){
             int intersectionTemp=calIntersection(foundLines[i],rowsConst,0.5);
-            if(std::abs(intersectionOfTracked-intersectionTemp)<colsConst/5){
-                trackedLine=foundLines[i];
-                findNewOne=true;
+            if(std::abs(intersectionOfTracked-intersectionTemp)<minDis){
+                minDis=std::abs(intersectionOfTracked-intersectionTemp);
+                minDisIdx=i;
             }
         }
-        if(!findNewOne){
+        if(minDis<colsConst/5){
+            trackedLine=foundLines[minDisIdx];
+        }else if(minDis>=colsConst-1){
             emit lineMiss();
         }
     }
@@ -88,10 +91,18 @@ cv::Mat lineFinder::getEdge(cv::Mat const& src1)
     int winheight=int(src.cols/20);
     cv::Mat window(winWidth,winheight,src.type(),cv::Scalar(0));
 
-    int globalMin = findKthMin(src,10);
+    //cv::equalizeHist(src,src);
+    cv::Mat srcUp=src(cv::Rect(0,0,src.cols-1,src.rows/2-1));
+    cv::Mat srcDown=src(cv::Rect(0,src.rows/2,src.cols-1,src.rows/2-1));
+//    int globalMin = findKthMin(src,5);
+    int globalMinUp = findKthMin(srcUp,10);
+    int globalMinDown = findKthMin(srcDown,10);
+
+//    qDebug()<<"globalMinUp: "<<globalMinUp<<endl;
+//    qDebug()<<"globalMinDown: "<<globalMinDown<<endl;
 
     for(int i=0;i<src.rows-winWidth;i+=int(winWidth*2/4)){
-        for(int j=0;j<src.cols-winheight;j+=winheight){
+        for(int j=0;j<src.cols-winheight;j+=int(winheight*2/4)){
 
             for(int m=0;m<winWidth;m++){
                 for(int n=0;n<winheight;n++){
@@ -103,15 +114,21 @@ cv::Mat lineFinder::getEdge(cv::Mat const& src1)
 
             for(int m=0;m<winWidth;m++){
                 for(int n=0;n<winheight;n++){
-                    if(window.at<uchar>(m,n)<localMin&&window.at<uchar>(m,n)<globalMin){
-                        window.at<uchar>(m,n)=1;
+                    if(m<winWidth/2){
+                        if(window.at<uchar>(m,n)<localMin&&window.at<uchar>(m,n)<globalMinUp){
+                            window.at<uchar>(m,n)=1;
+                        }else{
+                            window.at<uchar>(m,n)=0;
+                        }
                     }else{
-                        window.at<uchar>(m,n)=0;
+                        if(window.at<uchar>(m,n)<localMin&&window.at<uchar>(m,n)<globalMinDown){
+                            window.at<uchar>(m,n)=1;
+                        }else{
+                            window.at<uchar>(m,n)=0;
+                        }
                     }
                 }
             }
-
-        //    window=thinImage(window,-1);
 
             for(int m=0;m<winWidth;m++){
                 for(int n=0;n<winheight;n++){
@@ -122,10 +139,9 @@ cv::Mat lineFinder::getEdge(cv::Mat const& src1)
             }
         }
     }
-    edge=thinImage(edge,-1);
 
-    edge=rmEdgeByGraDir(src,edge,2);
-    edge=rmEdgeByGraDir(src,edge,10);
+   edge=rmEdgeByGraDir(src,edge);
+   edge=thinImage(edge,-1);
 
     cv::cvtColor(edge,dst,CV_GRAY2BGR);
     return dst;
@@ -134,12 +150,14 @@ cv::Mat lineFinder::getEdge(cv::Mat const& src1)
 std::vector<cv::Vec4i>  lineFinder::findLines(cv::Mat& edge)
 {
       cv::cvtColor(edge,edge,CV_BGR2GRAY);
-      std::vector<cv::Vec4i> lines,nouse;
+      std::vector<cv::Vec4i> lines;
 
-      int threshold = edge.rows/4;
+      int countNonZero = cv::countNonZero(edge);
+      int threshold = countNonZero/9;
 
-      cv::HoughLinesP(edge, lines, 4, CV_PI/180*4, threshold, threshold, edge.rows );
-//      qDebug()<<"size of lines2: "<<countNonZero ;
+      cv::HoughLinesP(edge, lines, 10, CV_PI/180, threshold, threshold, edge.rows );
+      qDebug()<<"countNonZero: "<<countNonZero ;
+    //  qDebug()<<"threshold: "<<threshold<<endl<<endl ;
 
       std::vector<cv::Vec4i>  myLineCluster;
 
@@ -151,7 +169,7 @@ std::vector<cv::Vec4i>  lineFinder::findLines(cv::Mat& edge)
       return myLineCluster;
 }
 
-int lineFinder::findKthMin(cv::Mat& src,int percent)
+int lineFinder::findKthMin(cv::Mat& src,float percent)
 {
     int min=0;
 
@@ -163,8 +181,8 @@ int lineFinder::findKthMin(cv::Mat& src,int percent)
             arrays[src.cols*i+j]=src.at<uchar>(i,j);
         }
     }
-    std::nth_element(arrays,arrays+len/percent,arrays+len);
-    min=arrays[len/percent];
+    std::nth_element(arrays,arrays+int(len/percent),arrays+len);
+    min=arrays[int(len/percent)];
 
     return min;
 }
@@ -238,47 +256,19 @@ int lineFinder::calIntersection(cv::Vec4i l, int rows,float location)
     return((temp-l[3])/((l[1]-l[3])/(double)(l[0]-l[2]))+l[2]);
 }
 
-cv::Mat lineFinder::rmEdgeByGraDir(cv::Mat &src,cv::Mat& edge,int shift1)
+cv::Mat lineFinder::rmEdgeByGraDir(cv::Mat &src,cv::Mat& edge)
 {
-    for(int i=0;i<src.rows;i++)
-    {
-        uchar* edgeElement = edge.ptr<uchar>(i);
+    cv::Mat edgeSobel;
+    cv::Sobel(src,edgeSobel,CV_8U,1,0);
+    for(int i=0;i<src.rows;i++){
         for(int j=0;j<src.cols;j++){
-            if(edgeElement[j]>0){
-                for(int shift=1;shift<shift1;shift+=2){
-                    int upValue=i-shift;
-                    if(upValue<0)
-                        upValue=0;
-                    int downValue=i+shift;
-                    if(downValue>src.rows)
-                        downValue=src.rows;
-                    int leftValue=j-shift;
-                    if(leftValue<0)
-                        leftValue=0;
-                    int rightValue=j+shift;
-                    if(rightValue>src.cols)
-                        rightValue=src.cols;
-                    bool flagVertical=false;
-
-                    for(int iNest=0;iNest<int(shift*1.2);iNest++){
-                        int tempVertical=j-int(shift*0.6)+iNest;
-                        if(tempVertical<0)
-                            tempVertical=0;
-                        else if(tempVertical>src.cols)
-                            tempVertical=src.cols;
-                        if(edge.at<uchar>(upValue,tempVertical)>0||
-                                edge.at<uchar>(downValue,tempVertical)>0){
-                            flagVertical=true;
-                        }
-                }
-
-                if(flagVertical){
-                    edgeElement[j] = 255;
+            if(edge.at<uchar>(i,j)>0){
+                if(edgeSobel.at<uchar>(i,j)>20){
+                    edge.at<uchar>(i,j)=255;
                 }else{
-                    edgeElement[j] = 0;
+                    edge.at<uchar>(i,j)=0;
                 }
             }
-        }
         }
     }
     return edge;

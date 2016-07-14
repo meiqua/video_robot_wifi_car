@@ -14,7 +14,7 @@ public:
 
     cv::Mat thinImage(const cv::Mat & src, const int maxIterations);
 
-    int findKthMin(cv::Mat& src,int percent);
+    int findKthMin(cv::Mat& src,float percent);
 
     cv::Mat getEdge(cv::Mat const& src);
 
@@ -24,7 +24,7 @@ public:
 
     int calIntersection(cv::Vec4i line,int rows,float location);
 
-    cv::Mat rmEdgeByGraDir(cv::Mat& src,cv::Mat& edge,int shift);
+    cv::Mat rmEdgeByGraDir(cv::Mat& src,cv::Mat& edge);
 
     cv::Mat drawLines(cv::Mat& backg, std::vector<cv::Vec4i>& lines,cv::Scalar color);
 

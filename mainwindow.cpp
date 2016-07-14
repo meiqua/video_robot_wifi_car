@@ -66,7 +66,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     // Set initial screen
  //    SetScreen(":/images/initialScreen.jpg");
-        SetScreen(":/images/test.png");
+        SetScreen(":/images/test1.png");
 //     qDebug()<<videoFrameLabel->size().width();
 }
 

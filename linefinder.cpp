@@ -59,8 +59,6 @@ void lineFinder::updateTrackedLine()
         }
         if(minDis<colsConst/5){
             trackedLine=foundLines[minDisIdx];
-        }else if(minDis>=colsConst-1){
-            emit lineMiss();
         }
     }
 }
@@ -156,7 +154,7 @@ std::vector<cv::Vec4i>  lineFinder::findLines(cv::Mat& edge)
       int threshold = countNonZero/9;
 
       cv::HoughLinesP(edge, lines, 10, CV_PI/180, threshold, threshold, edge.rows );
-      qDebug()<<"countNonZero: "<<countNonZero ;
+//      qDebug()<<"countNonZero: "<<countNonZero ;
     //  qDebug()<<"threshold: "<<threshold<<endl<<endl ;
 
       std::vector<cv::Vec4i>  myLineCluster;

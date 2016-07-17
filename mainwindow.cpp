@@ -153,6 +153,7 @@ void MainWindow::timerLoop() {
     videoCapture>>rawFrame;
     int currentFrame=int(videoCapture.get(CV_CAP_PROP_POS_FRAMES));
     int totalFrame=int(videoCapture.get(CV_CAP_PROP_FRAME_COUNT));
+  //  qDebug()<<"totalFrame is:"<<totalFrame;
 
     // Check if frame was successfully captured.
     if (rawFrame.empty()) {

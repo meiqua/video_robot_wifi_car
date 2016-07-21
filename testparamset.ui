@@ -6,46 +6,18 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
-    <height>300</height>
+    <width>62</width>
+    <height>77</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>test</string>
   </property>
-  <widget class="QSlider" name="verticalSlider">
-   <property name="geometry">
-    <rect>
-     <x>30</x>
-     <y>20</y>
-     <width>27</width>
-     <height>251</height>
-    </rect>
-   </property>
-   <property name="maximum">
-    <number>5</number>
-   </property>
-   <property name="pageStep">
-    <number>1</number>
-   </property>
-   <property name="sliderPosition">
-    <number>5</number>
-   </property>
-   <property name="orientation">
-    <enum>Qt::Vertical</enum>
-   </property>
-   <property name="tickPosition">
-    <enum>QSlider::TicksBelow</enum>
-   </property>
-   <property name="tickInterval">
-    <number>1</number>
-   </property>
-  </widget>
   <widget class="QCheckBox" name="do1">
    <property name="geometry">
     <rect>
-     <x>340</x>
-     <y>130</y>
+     <x>20</x>
+     <y>20</y>
      <width>31</width>
      <height>16</height>
     </rect>
@@ -60,8 +32,8 @@
   <widget class="QCheckBox" name="do2">
    <property name="geometry">
     <rect>
-     <x>340</x>
-     <y>150</y>
+     <x>20</x>
+     <y>40</y>
      <width>31</width>
      <height>16</height>
     </rect>
@@ -69,60 +41,6 @@
    <property name="text">
     <string>2</string>
    </property>
-  </widget>
-  <widget class="QWidget" name="layoutWidget">
-   <property name="geometry">
-    <rect>
-     <x>50</x>
-     <y>10</y>
-     <width>272</width>
-     <height>261</height>
-    </rect>
-   </property>
-   <layout class="QVBoxLayout" name="verticalLayout">
-    <item>
-     <widget class="QLabel" name="label">
-      <property name="text">
-       <string>find gradient threshold using average</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QLabel" name="label_2">
-      <property name="text">
-       <string>find edge by canny,using above threshold</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QLabel" name="label_7">
-      <property name="text">
-       <string>remove unwanted edge</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QLabel" name="label_9">
-      <property name="text">
-       <string>find lines, using hough method</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QLabel" name="label_4">
-      <property name="text">
-       <string>find two clustered lines</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QLabel" name="label_10">
-      <property name="text">
-       <string>predict error</string>
-      </property>
-     </widget>
-    </item>
-   </layout>
   </widget>
   <widget class="QLabel" name="label_11">
    <property name="geometry">
@@ -137,11 +55,6 @@
     <string/>
    </property>
   </widget>
-  <zorder>layoutWidget</zorder>
-  <zorder>verticalSlider</zorder>
-  <zorder>do1</zorder>
-  <zorder>do2</zorder>
-  <zorder>label_11</zorder>
  </widget>
  <resources/>
  <connections/>

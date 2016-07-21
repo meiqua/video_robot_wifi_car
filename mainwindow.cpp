@@ -310,12 +310,12 @@ void MainWindow::reportMiss()
 
 void MainWindow::actionForward()
 {
-    forwardCount=10;
+    forwardCount+=10;
 }
 
 void MainWindow::actionBackward()
 {
-    backwardCount=10;
+    backwardCount+=10;
 }
 
 cv::Mat MainWindow::loadFromQrc(QString qrc)

@@ -19,6 +19,7 @@ cv::Mat lineFinder::testAction(cv::Mat& src)
     foundLines=lines;
     updateTrackedLine();
 
+    if(testParam->do1){
         backg = drawLines(backg,lines,cv::Scalar(0,255,0));
 
         cv::Vec4i midLine;
@@ -37,8 +38,7 @@ cv::Mat lineFinder::testAction(cv::Mat& src)
         std::vector<cv::Vec4i> predictLines;
         predictLines.push_back(predictLine);
         backg = drawLines(backg,predictLines,cv::Scalar(0,0,255));
-
-
+    }
         return backg;
 }
 

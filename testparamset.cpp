@@ -8,7 +8,7 @@ testparamset::testparamset(QWidget *parent) :
     ui->setupUi(this);
 
 
-    connect(ui->verticalSlider,SIGNAL(valueChanged(int)),this,SLOT(valueChanged(int)));
+    //connect(ui->verticalSlider,SIGNAL(valueChanged(int)),this,SLOT(valueChanged(int)));
     steps = 0;
     do1 = 0;
     do2 = 0;

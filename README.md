@@ -36,7 +36,4 @@
         * find lines, using hough method
         * find two clusters of lines, one is the top half, the other is the bottom half.
         * predict lines by one line in top half and one line in bottom half.  
-        * 
-
-![test-tag](https://github.com/meiqua/video_robot_wifi_car/blob/cameraMeasure/images/up.png)
               

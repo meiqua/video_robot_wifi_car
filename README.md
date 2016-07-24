@@ -35,5 +35,8 @@
         * repeat above steps for one time, just change first step a little bit: find gradient threshold using otsu method around **edge**(this step will enhance the detected edge because we use more accurate edges)
         * find lines, using hough method
         * find two clusters of lines, one is the top half, the other is the bottom half.
-        * predict lines by one line in top half and one line in bottom half.
+        * predict lines by one line in top half and one line in bottom half.  
+        * 
+
+![test-tag](https://github.com/meiqua/video_robot_wifi_car/blob/cameraMeasure/images/up.png)
               
